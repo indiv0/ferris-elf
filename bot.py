@@ -173,6 +173,7 @@ def get_scores_lb(cur: sqlite3.Cursor, day: int, part: int) -> Iterator[tuple[Op
 
 async def formatted_scores_for(author: discord.User, bot: discord.Client, cur: sqlite3.Cursor, day: int, part: int) -> str:
     builder = io.StringIO()
+    guild = await bot.get_guild(author.guild)
 
     for (opt_user, bench_time) in get_scores_lb(cur, day, part):
         if opt_user is None or bench_time is None:
@@ -180,15 +181,13 @@ async def formatted_scores_for(author: discord.User, bot: discord.Client, cur: s
 
         user = int(opt_user)
 
-        userobj = bot.get_user(user) or await bot.fetch_user(user)
-
-        if userobj:
-            # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
-            # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
-            if author.guild != userobj.guild:
-                part1 += f"\t{userobj.name}: **{ns(time)}**\n"
-                continue
-            builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
+        # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
+        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
+        if guild.get_member(user) is None:
+            userobj = bot.get_user(user) or await bot.fetch_user(user)
+            part1 += f"\t{userobj.name}: **{ns(time)}**\n"
+            continue
+        builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
 
     return builder.getvalue()
 
