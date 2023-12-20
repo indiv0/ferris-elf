@@ -6,7 +6,7 @@ import io
 import functools
 import os
 import typing
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional
 from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
@@ -171,30 +171,21 @@ def get_scores_lb(cur: sqlite3.Cursor, day: int, part: int) -> Iterator[tuple[Op
         (day, part)
     )
 
-async def formatted_scores_for(author: Union[discord.User, discord.Member], bot: discord.Client, cur: sqlite3.Cursor, day: int, part: int) -> str:
-    builder = io.StringIO()
 
-    # If the message was not sent in a DM, get the author's guild.
-    if isinstance(author, discord.Member):
-        # FIXME [NP]: Is this redundant because we have the `author.guild` already?
-        guild = bot.get_guild(author.guild.id)
-    else:
-        guild = None
+async def formatted_scores_for(bot: discord.Client, cur: sqlite3.Cursor, day: int, part: int) -> str:
+    builder = io.StringIO()
 
     for (opt_user, bench_time) in get_scores_lb(cur, day, part):
         if opt_user is None or bench_time is None:
             continue
 
         user = int(opt_user)
+        print(user, bench_time)
 
-        # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
-        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
-        if guild is None or guild.get_member(user) is None:
-            userobj = bot.get_user(user) or await bot.fetch_user(user)
-            if userobj:
-                builder.write(f"\t{userobj.name}: **{ns(bench_time)}**\n")
-            continue
-        builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
+        userobj = bot.get_user(user) or await bot.fetch_user(user)
+
+        if userobj:
+            builder.write(f"\t{userobj.name}: **{ns(bench_time)}**\n")
 
     return builder.getvalue()
 
@@ -256,8 +247,8 @@ class MyBot(discord.Client):
 
             cur = db.cursor()
 
-            part1 = await formatted_scores_for(msg.author, self, cur, day, 1)
-            part2 = await formatted_scores_for(msg.author, self, cur, day, 2)
+            part1 = await formatted_scores_for(self, cur, day, 1)
+            part2 = await formatted_scores_for(self, cur, day, 2)
             
             embed = discord.Embed(title=f"Top 10 fastest toboggans for day {day}", color=0xE84611)
 
