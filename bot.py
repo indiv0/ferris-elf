@@ -185,7 +185,8 @@ async def formatted_scores_for(author: discord.User, bot: discord.Client, cur: s
         # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
         if guild.get_member(user) is None:
             userobj = bot.get_user(user) or await bot.fetch_user(user)
-            builder.write(f"\t{userobj.name}: **{ns(bench_time)}**\n")
+            if userobj:
+                builder.write(f"\t{userobj.name}: **{ns(bench_time)}**\n")
             continue
         builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
 
