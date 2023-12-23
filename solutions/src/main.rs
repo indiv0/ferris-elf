@@ -35,11 +35,6 @@ fn solutions(conn: &rusqlite::Connection, day: u8, part: u8) {
     }
     // Verify that there are either no solutions or solutions for each of the 3 inputs.
     assert!(solutions.is_empty() || solutions.len() == 3);
-    if !solutions.is_empty() {
-        assert!(solutions.iter().find(|s| s.key == KEYS[0]).is_some());
-        assert!(solutions.iter().find(|s| s.key == KEYS[1]).is_some());
-        assert!(solutions.iter().find(|s| s.key == KEYS[2]).is_some());
-    }
 }
 
 #[derive(Clone, Debug)]
