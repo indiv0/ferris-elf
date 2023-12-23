@@ -353,6 +353,8 @@ Be kind and do not abuse :)"""))
 
         if not self.queue.empty():
             await msg.reply("Benchmark queued...", mention_author=False)
+        else:
+            await msg.reply("Benchmark running...", mention_author=False)
 
         print("Queued for", msg.author, "(Queue length)", self.queue.qsize())
         self.queue.put_nowait(msg)        
