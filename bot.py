@@ -331,6 +331,7 @@ num-traits = "0.2.17"
 roots = "0.0.8"
 radsort = "0.1.0"
 pathfinding = "4"
+bit-set = "0.5"
 ```
 If you'd like a dependency be added, please send a message to <@117530756263182344>. Check back often as the available dependencies are bound to change over the course of AOC
 
