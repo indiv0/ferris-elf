@@ -4,35 +4,36 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-ahash = { version = "0.8" }
-t1ha = { version = "0.1" }
-bytemuck = { version = "1", features = ["derive"] }
-itertools = "0.13"
-rayon = "1"
-regex = "1"
-parse-display = "0.10"
-memchr = "2"
-core_simd = { git = "https://github.com/rust-lang/portable-simd" }
+ahash = "0.8"
 arrayvec = "0.7"
-smallvec = "1"
-rustc-hash = "1"
-bitvec = "1"
-dashmap = "6"
 atoi = "2"
-atoi_simd = "0.16"
-foldhash = "0.1"
 atoi_radix10 = { git = "https://github.com/gilescope/atoi_radix10" }
-btoi = "0.4"
-nom = "7"
-rangemap = "1"
-flume = "0.11"
-pollster = "0.4"
-#wgpu = "0.18"
-mimalloc = { version = "0.1", default-features = false }
+atoi_simd = "0.16"
+bitvec = "1"
+bit-set = "0.8"
 bstr = "1"
+btoi = "0.4"
+bytemuck = { version = "1", features = ["derive"] }
+core_simd = { git = "https://github.com/rust-lang/portable-simd" }
+dashmap = "6"
+fancy-regex = "0.14"
+flume = "0.11"
+itertools = "0.13"
+foldhash = "0.1"
+memchr = "2"
+mimalloc = { version = "0.1", default-features = false }
+nom = "7"
 num = "0.4"
 num-traits = "0.2"
-roots = "0.0.8"
-radsort = "0.1"
+parse-display = "0.10"
 pathfinding = "4"
-bit-set = "0.8"
+pollster = "0.4"
+radsort = "0.1"
+rangemap = "1"
+rayon = "1"
+regex = "1"
+roots = "0.0.8"
+rustc-hash = { version = "2.1", features = ["nightly"] }
+smallvec = "1"
+t1ha = "0.1"
+#wgpu = "0.18"

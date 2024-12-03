@@ -307,33 +307,39 @@ Note that ferris-elf includes a **trailing newline** in the input.
 Rust version is latest Docker nightly
 **Available dependencies**
 ```toml
+ahash = "0.8"
+arrayvec = "0.7"
+atoi = "2"
+atoi_radix10 = { git = "https://github.com/gilescope/atoi_radix10" }
+atoi_simd = "0.16"
+bitvec = "1"
+bit-set = "0.8"
+bstr = "1"
+btoi = "0.4"
 bytemuck = { version = "1", features = ["derive"] }
-itertools = "0.12"
+core_simd = { git = "https://github.com/rust-lang/portable-simd" }
+dashmap = "6"
+fancy-regex = "0.14"
+flume = "0.11"
+itertools = "0.13"
+foldhash = "0.1"
+memchr = "2"
+mimalloc = { version = "0.1", default-features = false }
+nom = "7"
+num = "0.4"
+num-traits = "0.2"
+parse-display = "0.10"
+pathfinding = "4"
+pollster = "0.4"
+radsort = "0.1"
+rangemap = "1"
 rayon = "1"
 regex = "1"
-parse-display = "0.8"
-memchr = "2"
-core_simd = { git = "https://github.com/rust-lang/portable-simd" }
-arrayvec = "0.7"
-smallvec = "1"
-rustc-hash = "1"
-bitvec = "1"
-dashmap = "5"
-atoi_radix10 = { git = "https://github.com/gilescope/atoi_radix10" }
-btoi = "0.4"
-nom = "7"
-rangemap = "1.4.0"
-flume = "0.11"
-pollster = "0.3"
-wgpu = "0.18"
-mimalloc = { version = "0.1", default-features = false }
-bstr = "1"
-num = "0.4.1"
-num-traits = "0.2.17"
 roots = "0.0.8"
-radsort = "0.1.0"
-pathfinding = "4"
-bit-set = "0.5"
+rustc-hash = { version = "2.1", features = ["nightly"] }
+smallvec = "1"
+t1ha = "0.1"
+#wgpu = "0.18"
 ```
 If you'd like a dependency be added, please send a message to <@117530756263182344>. Check back often as the available dependencies are bound to change over the course of AOC
 
