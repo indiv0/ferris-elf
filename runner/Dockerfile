@@ -116,6 +116,7 @@ COPY build.rs build.rs
 COPY Cargo.toml Cargo.toml
 COPY src/main.rs src/main.rs
 COPY src/placeholder.rs src/lib.rs
+ENV RUSTFLAGS="-Ctarget-cpu=native"
 RUN cargo build --release
 RUN cargo clean -p ferris-elf
 
