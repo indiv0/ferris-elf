@@ -149,9 +149,10 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
         else:
             print("Cannot verify run", result["answer"])
 
-        cur.execute("INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)", (str(msg.author.id), code, day, part, result["median"], result["answer"], result["answer"]))
         results.append(result)
-    
+
+    for result in results:
+        cur.execute("INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)", (str(msg.author.id), code, day, part, result["median"], result["answer"], result["answer"]))
 
     median = avg([int(r["median"]) for r in results])
     average = avg([int(r["average"]) for r in results])
