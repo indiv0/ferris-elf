@@ -2,8 +2,8 @@ import requests
 import os, sys
 from datetime import datetime, timedelta, timezone
 
-year = "2023"
-root = f"/home/indiv0/ferris-elf"
+year = "2024"
+root = f"/home/indiv0/src/ferris-elf"
 keys = filter(None, [os.getenv("AOC_TOKEN_1"), os.getenv("AOC_TOKEN_2"), os.getenv("AOC_TOKEN_3")])
 
 def get(day: int | str) -> None:
