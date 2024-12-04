@@ -1,0 +1,11 @@
+[project]
+name = "ferris-elf"
+version = "0.1.0"
+description = "Ferris elf discord bot"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "discord-py>=2.4.0",
+    "docker>=7.1.0",
+    "strip-ansi>=0.1.1",
+]
