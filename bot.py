@@ -51,6 +51,13 @@ async def build_image(msg: discord.Message, solution: bytes) -> bool:
         e = ""
         for chunk in err.build_log:
             e += chunk.get("stream") or ""
+        if "Compiling[0m ferris-elf" in e:
+            e = e[e.index("Compiling[0m ferris-elf")-18:]
+            if len(e) < 2000:
+                await msg.reply(f"Error building benchmark: ```ansi{e}\n```")
+                return False
+        from strip_ansi import strip_ansi
+        e = strip_ansi(e)
         await msg.reply(f"Error building benchmark: {err}", file=discord.File(io.BytesIO(e.encode("utf-8")), "build_log.txt"))
         return False
     #finally:
