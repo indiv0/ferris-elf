@@ -257,6 +257,11 @@ class MyBot(discord.Client):
                 print(f"Processing request for {msg.author.name}")
                 code = await msg.attachments[0].read()
                 parts = [p for p in msg.content.split(" ") if p]
+
+                if len(parts) < 2:
+                    await msg.reply("Looks like you forgot to specify `<day> <part>`. Submit again, with a message like `4 2` if your code is for day 4 part 2.")
+                    continue
+
                 day = int((parts[0:1] or (today(), ))[0])
                 part = int((parts[1:2] or (1, ))[0])
 
