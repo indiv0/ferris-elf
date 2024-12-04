@@ -237,6 +237,9 @@ async def formatted_scores_for(author: Union[discord.User, discord.Member], bot:
             continue
         builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
 
+        if len(builder.getvalue()) > 800:
+            break
+
     return builder.getvalue()
 
 
