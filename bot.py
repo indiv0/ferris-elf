@@ -188,16 +188,18 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
 
     median = avg([int(r["median"]) for r in results])
     average = avg([int(r["average"]) for r in results])
-    total_memory_accesses = avg([int(r["total_memory_accesses"]) for r in results])
-    total_l1_icache_misses = avg([int(r["total_l1_icache_misses"]) for r in results])
-    total_ll_icache_misses = avg([int(r["total_ll_icache_misses"]) for r in results])
-    total_l1_dcache_misses = avg([int(r["total_l1_dcache_misses"]) for r in results])
-    total_ll_dcache_misses = avg([int(r["total_ll_dcache_misses"]) for r in results])
+    #total_memory_accesses = avg([int(r["total_memory_accesses"]) for r in results])
+    #total_l1_icache_misses = avg([int(r["total_l1_icache_misses"]) for r in results])
+    #total_ll_icache_misses = avg([int(r["total_ll_icache_misses"]) for r in results])
+    #total_l1_dcache_misses = avg([int(r["total_l1_dcache_misses"]) for r in results])
+    #total_ll_dcache_misses = avg([int(r["total_ll_dcache_misses"]) for r in results])
 
     if verified:
-        await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses}**"))
+        #await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
+        await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**"))
     else:
-        await msg.reply(embed=discord.Embed(title="Benchmark complete (Unverified)", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses}**"))
+        #await msg.reply(embed=discord.Embed(title="Benchmark complete (Unverified)", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
+        await msg.reply(embed=discord.Embed(title="Benchmark complete (Unverified)", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**"))
 
     db.commit()
     print("Inserted results into DB")
