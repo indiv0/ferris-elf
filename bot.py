@@ -364,7 +364,7 @@ bitvec = "1"
 bit-set = "0.8"
 bstr = "1"
 btoi = "0.4"
-bytemuck = { version = "1", features = ["derive"] }
+bytemuck = { version = "1", features = ["must_cast", "nightly_portable_simd", "derive"] }
 core_simd = { git = "https://github.com/rust-lang/portable-simd" }
 dashmap = "6"
 fancy-regex = "0.14"
