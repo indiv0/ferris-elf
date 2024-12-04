@@ -110,8 +110,16 @@ RUN apt-get update -qq && \
   rm -rf /var/lib/apt/lists/*
 COPY nvidia_icd.json /etc/vulkan/icd.d
 
+# Setup valgrind for cachegrind.
+RUN apt-get update -qq && \
+  apt-get install -y -qq --no-install-recommends \
+    valgrind && \
+  rm -rf /var/lib/apt/lists/*
+RUN cargo install --locked cargo-profiler
+
 # These should be cached
 WORKDIR /usr/src/ferris-elf
+COPY profile.sh profile.sh
 COPY build.rs build.rs
 COPY Cargo.toml Cargo.toml
 COPY src/main.rs src/main.rs

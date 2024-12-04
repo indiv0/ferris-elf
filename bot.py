@@ -140,6 +140,36 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
                 result["max"] = int(line[15:])
             if line.startswith("FERRIS_ELF_MIN "):
                 result["min"] = int(line[15:])
+            # Total Memory Accesses...4,790,804,439
+            # FERRIS_ELF_MIN A
+            # 
+            # Total L1 I-Cache Misses...13,367 (0%)
+            # Total LL I-Cache Misses...64 (0%)
+            # Total L1 D-Cache Misses...19,345,778 (0%)
+            # Total LL D-Cache Misses...555 (0%)
+            # 
+            #  Ir  I1mr ILmr  Dr  D1mr DLmr  Dw  D1mw DLmw
+            # 0.96 1.00 0.83 0.94 0.99 0.00 0.79 0.11 0.01 ???:ferris_elf
+            # -----------------------------------------------------------------------
+            # 0.02 0.00 0.11 0.06 0.01 1.00 0.10 0.44 0.52 memcpy.S:__GI_memcpy
+            # -----------------------------------------------------------------------
+            # 0.02 0.00 0.06 0.00 0.00 0.00 0.12 0.45 0.47 memset.S:__GI_memset
+            # -----------------------------------------------------------------------
+            if line.startswith("Total Memory Accesses"):
+                result["total_memory_accesses"] = int(line[24:].replace(",", ""))
+                print(result["total_memory_accesses"])
+            if line.startswith("Total L1 I-Cache Misses"):
+                result["total_l1_icache_misses"] = int(line[26:].replace(",", "").split("(")[0])
+                print(result["total_l1_icache_misses"])
+            if line.startswith("Total LL I-Cache Misses"):
+                result["total_ll_icache_misses"] = int(line[26:].replace(",", "").split("(")[0])
+                print(result["total_ll_icache_misses"])
+            if line.startswith("Total L1 D-Cache Misses"):
+                result["total_l1_dcache_misses"] = int(line[26:].replace(",", "").split("(")[0])
+                print(result["total_l1_dcache_misses"])
+            if line.startswith("Total LL D-Cache Misses"):
+                result["total_ll_dcache_misses"] = int(line[26:].replace(",", "").split("(")[0])
+                print(result["total_ll_dcache_misses"])
 
         if verify:
             if not result["answer"] == verify:
