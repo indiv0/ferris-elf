@@ -65,7 +65,7 @@ async def run_image(msg: discord.Message, input: str) -> typing.Optional[str]:
         #os.environ['NVIDIA_VISIBLE_DEVICES']='all'
         #os.environ['NVIDIA_DRIVER_CAPABILITIES']='compute,utility'
         #out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./target/release/ferris-elf", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none", runtime="nvidia"))
-        out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./target/release/ferris-elf", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none"))
+        out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./profile.sh", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none"))
         out = out.decode("utf-8")
         print(out)
         return str(out)
@@ -155,21 +155,16 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
             # -----------------------------------------------------------------------
             # 0.02 0.00 0.06 0.00 0.00 0.00 0.12 0.45 0.47 memset.S:__GI_memset
             # -----------------------------------------------------------------------
-            if line.startswith("Total Memory Accesses"):
-                result["total_memory_accesses"] = int(line[24:].replace(",", ""))
-                print(result["total_memory_accesses"])
-            if line.startswith("Total L1 I-Cache Misses"):
-                result["total_l1_icache_misses"] = int(line[26:].replace(",", "").split("(")[0])
-                print(result["total_l1_icache_misses"])
-            if line.startswith("Total LL I-Cache Misses"):
-                result["total_ll_icache_misses"] = int(line[26:].replace(",", "").split("(")[0])
-                print(result["total_ll_icache_misses"])
-            if line.startswith("Total L1 D-Cache Misses"):
-                result["total_l1_dcache_misses"] = int(line[26:].replace(",", "").split("(")[0])
-                print(result["total_l1_dcache_misses"])
-            if line.startswith("Total LL D-Cache Misses"):
-                result["total_ll_dcache_misses"] = int(line[26:].replace(",", "").split("(")[0])
-                print(result["total_ll_dcache_misses"])
+            if "Total Memory Accesses" in line:
+                result["total_memory_accesses"] = int(line[33:].replace(",", "").split()[0])
+            if "Total L1 I-Cache Misses" in line:
+                result["total_l1_icache_misses"] = int(line[35:].replace(",", "").split()[0])
+            if "Total LL I-Cache Misses" in line:
+                result["total_ll_icache_misses"] = int(line[35:].replace(",", "").split()[0])
+            if "Total L1 D-Cache Misses" in line:
+                result["total_l1_dcache_misses"] = int(line[35:].replace(",", "").split()[0])
+            if "Total LL D-Cache Misses" in line:
+                result["total_ll_dcache_misses"] = int(line[35:].replace(",", "").split()[0])
 
         if verify:
             if not result["answer"] == verify:
