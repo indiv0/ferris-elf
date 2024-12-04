@@ -11,6 +11,7 @@ from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
 from datetime import datetime, timedelta, timezone
+from discord.utils import escape_markdown
 doc = docker.from_env()
 db = sqlite3.connect("database.db")
 
@@ -233,7 +234,7 @@ async def formatted_scores_for(author: Union[discord.User, discord.Member], bot:
         if guild is None or guild.get_member(user) is None:
             userobj = bot.get_user(user) or await bot.fetch_user(user)
             if userobj:
-                builder.write(f"\t{userobj.name}: **{ns(bench_time)}**\n")
+                builder.write(f"\t{escape_markdown(userobj.name)}: **{ns(bench_time)}**\n")
             continue
         builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
 
