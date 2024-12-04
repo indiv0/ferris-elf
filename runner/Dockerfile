@@ -95,7 +95,7 @@ RUN set -eux; \
 RUN rustup install nightly
 RUN rustup default nightly
 ENV RUSTFLAGS="-C target-cpu=native"
-ENV CARGO_TERM_COLOR="never"
+ENV CARGO_TERM_COLOR="always"
 ENV TERM="dumb"
 
 # Update `vulkan`.
