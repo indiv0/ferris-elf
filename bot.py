@@ -137,7 +137,7 @@ async def solutions_for(author: Union[discord.User, discord.Member], bot: discor
 
 def solutions_for(cur: sqlite3.Cursor, day: int, part: int) -> Iterator[tuple[Optional[int], Optional[int]]]:
     return cur.execute("""SELECT answer2, COUNT(*)
-        FROM solutions
+        FROM runs
         WHERE day = ? AND part = ?
         GROUP BY answer2""",
         (day, part))
@@ -454,7 +454,8 @@ Be kind and do not abuse :)"""))
             return
 
         if msg.content.startswith("solutions"):
-            if not msg.author.id == 117530756263182344:
+            # iwearapot + bendn
+            if not msg.author.id == 117530756263182344 and not msg.author.id == 696196765564534825:
                 await msg.reply("(For helptext, Direct Message me `help`)")
                 return
 
@@ -483,7 +484,7 @@ Be kind and do not abuse :)"""))
             cur = db.cursor()
 
             part1 = formatted_solutions_for(cur, day, 1)
-            part2 = formatted_solutions_for(self, cur, day, 2)
+            part2 = formatted_solutions_for(cur, day, 2)
 
             embed = discord.Embed(title=f"Submitted answers for day {day}", color=0xE84611)
 
@@ -497,6 +498,66 @@ Be kind and do not abuse :)"""))
             embed.set_footer(text=f"Computed in {end}")
 
             await msg.reply(embed=embed)
+            return
+
+        if msg.content.startswith("approve"):
+            # iwearapot + bendn
+            if not msg.author.id == 117530756263182344 and not msg.author.id == 696196765564534825:
+                await msg.reply("(For helptext, Direct Message me `help`)")
+                return
+
+            parts = msg.content.split(" ")
+
+            try:
+                day = int(parts[1])
+            except IndexError:
+                await msg.reply("First parameter must be the day as an integer")
+                return
+            except ValueError:
+                await msg.reply("ERR: Passed invalid integer for day")
+                return
+
+            if not (1 <= day <= 25):
+                await msg.reply("ERR: Day not in range (1..=25)")
+                return
+
+            try:
+                part = int(parts[2])
+            except IndexError:
+                await msg.reply("Second parameter must be the part as an integer")
+                return
+            except ValueError:
+                await msg.reply("ERR: Passed invalid integer for part")
+                return
+
+            if not (1 <= part <= 2):
+                await msg.reply("ERR: Part not in range (1..=2)")
+                return
+
+            try:
+                input_id = str(parts[3])
+            except IndexError:
+                await msg.reply("Third parameter must be the input ID as an string")
+                return
+            except ValueError:
+                await msg.reply("ERR: Passed invalid string for input ID")
+                return
+
+            try:
+                answer = int(parts[4])
+            except IndexError:
+                await msg.reply("Fourth parameter must be the answer as an integer")
+                return
+            except ValueError:
+                await msg.reply("ERR: Passed invalid integer for answer")
+                return
+
+            print(f"Approving for d {day}")
+            cur = db.cursor()
+            #cur.execute("INSERT INTO solutions VALUES (?, ?, ?, ?, ?)", (input_id, day, part, answer, answer))
+
+            await msg.reply(f"Submitted answer {answer} for day {day} part {part} input {input_id}")
+            return
 
         if len(msg.attachments) == 0:
             await msg.reply("Please provide the code as a file attachment")
