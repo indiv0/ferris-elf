@@ -14,10 +14,12 @@ bit-set = "0.8"
 bstr = "1"
 btoi = "0.4"
 bytemuck = { version = "1", features = ["must_cast", "nightly_portable_simd", "derive"] }
+car = "0.1"
 core_simd = { git = "https://github.com/rust-lang/portable-simd" }
 dashmap = "6"
 fancy-regex = "0.14"
 flume = "0.11"
+glam = { version = "0.29", features = ["approx", "bytemuck", "rand", "serde", "mint"] }
 itertools = "0.13"
 foldhash = "0.1"
 memchr = "2"
