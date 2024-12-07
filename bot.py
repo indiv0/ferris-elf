@@ -105,6 +105,56 @@ class ResultDict(typing.TypedDict, total=False):
     max: int
     min: int
 
+async def solutions_for(author: Union[discord.User, discord.Member], bot: discord.Client, cur: sqlite3.Cursor, day: int, part: int) -> str:
+    builder = io.StringIO()
+
+    # If the message was not sent in a DM, get the author's guild.
+    if isinstance(author, discord.Member):
+        # FIXME [NP]: Is this redundant because we have the `author.guild` already?
+        guild = bot.get_guild(author.guild.id)
+    else:
+        guild = None
+
+    for (opt_user, bench_time) in get_scores_lb(cur, day, part):
+        if opt_user is None or bench_time is None:
+            continue
+
+        user = int(opt_user)
+
+        # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
+        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
+        if guild is None or guild.get_member(user) is None:
+            userobj = bot.get_user(user) or await bot.fetch_user(user)
+            if userobj:
+                builder.write(f"\t{escape_markdown(userobj.name)}: **{ns(bench_time)}**\n")
+            continue
+        builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
+
+        if len(builder.getvalue()) > 800:
+            break
+
+    return builder.getvalue()
+
+def solutions_for(cur: sqlite3.Cursor, day: int, part: int) -> Iterator[tuple[Optional[int], Optional[int]]]:
+    return cur.execute("""SELECT answer2, COUNT(*)
+        FROM solutions
+        WHERE day = ? AND part = ?
+        GROUP BY answer2""",
+        (day, part))
+
+def formatted_solutions_for(cur: sqlite3.Cursor, day: int, part: int) -> str:
+    builder = io.StringIO()
+
+    for (answer, count) in solutions_for(cur, day, part):
+        if answer is None or count is None:
+            continue
+
+        builder.write(f"\t{answer}: **{count}**\n")
+
+        if len(builder.getvalue()) > 800:
+            break
+
+    return builder.getvalue()
 
 async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> None:
     build = await build_image(msg, code)
@@ -402,6 +452,51 @@ call to `run` should always perform all of the work.
 
 Be kind and do not abuse :)"""))
             return
+
+        if msg.content.startswith("solutions"):
+            if not msg.author.id == 117530756263182344:
+                await msg.reply("(For helptext, Direct Message me `help`)")
+                return
+
+            timeit = monotonic_ns()
+
+            parts = msg.content.split(" ")
+
+            try:
+                day = int(parts[1])
+            except IndexError:
+                day = today()
+            except ValueError:
+                if len(parts) > 2:
+                    # if there were more words passed just skip it
+                    # it probably wasn't for us
+                    return
+
+                await msg.reply("ERR: Passed invalid integer for day")
+                return
+
+            if not (1 <= day <= 25):
+                await msg.reply("ERR: Day not in range (1..=25)")
+                return
+
+            print(f"Solutions for d {day}")
+            cur = db.cursor()
+
+            part1 = formatted_solutions_for(cur, day, 1)
+            part2 = formatted_solutions_for(self, cur, day, 2)
+
+            embed = discord.Embed(title=f"Submitted answers for day {day}", color=0xE84611)
+
+            if part1:
+                embed.add_field(name="Part 1", value=part1, inline=True)
+            if part2:
+                embed.add_field(name="Part 2", value=part2, inline=True)
+
+            end = ns(monotonic_ns() - timeit)
+
+            embed.set_footer(text=f"Computed in {end}")
+
+            await msg.reply(embed=embed)
 
         if len(msg.attachments) == 0:
             await msg.reply("Please provide the code as a file attachment")
