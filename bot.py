@@ -12,6 +12,8 @@ from os import listdir
 from os.path import isfile, join
 from datetime import datetime, timedelta, timezone
 from discord.utils import escape_markdown
+from statistics import median, mean, stdev
+from itertools import chain
 doc = docker.from_env()
 db = sqlite3.connect("database.db")
 
@@ -83,9 +85,6 @@ async def run_image(msg: discord.Message, input: str) -> typing.Optional[str]:
         return None
     #finally:
     #    await status.delete()
-
-def avg(l: list[float]) -> float:
-    return sum(l) / len(l)
 
 def ns(v: float) -> str:
     if v > 1e9:
@@ -170,6 +169,8 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
 
     verified = False
     results = []
+    previous_best = get_best(cur, day, part, msg.author.id)
+    size = 0
     for (i, file) in enumerate(onlyfiles):
         rows = db.cursor().execute("SELECT answer2 FROM solutions WHERE key = ? AND day = ? AND part = ?", (file, day, part))
         verify = None
@@ -179,6 +180,7 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
 
         with open(join(day_path, file), "r") as f:
             input = f.read()
+        size = max(len(input), size)
 
         #status = await msg.reply(f"Benchmarking input {i+1}", mention_author=False)
         out = await run_image(msg, input)
@@ -236,25 +238,28 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
 
     for result in results:
         cur.execute("INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)", (str(msg.author.id), code, day, part, result["median"], result["answer"], result["answer"]))
+    best = min([int(r["median"]) for r in results])
+    med = median([int(r["median"]) for r in results])
+    dev = stdev(chain([int(r["min"]) for r in results], [int(r["max"]) for r in results]))
+    #total_memory_accesses = mean([int(r["total_memory_accesses"]) for r in results])
+    #total_l1_icache_misses = mean([int(r["total_l1_icache_misses"]) for r in results])
+    #total_ll_icache_misses = mean([int(r["total_ll_icache_misses"]) for r in results])
+    #total_l1_dcache_misses = mean([int(r["total_l1_dcache_misses"]) for r in results])
+    #total_ll_dcache_misses = mean([int(r["total_ll_dcache_misses"]) for r in results])
 
-    median = avg([int(r["median"]) for r in results])
-    average = avg([int(r["average"]) for r in results])
-    #total_memory_accesses = avg([int(r["total_memory_accesses"]) for r in results])
-    #total_l1_icache_misses = avg([int(r["total_l1_icache_misses"]) for r in results])
-    #total_ll_icache_misses = avg([int(r["total_ll_icache_misses"]) for r in results])
-    #total_l1_dcache_misses = avg([int(r["total_l1_dcache_misses"]) for r in results])
-    #total_ll_dcache_misses = avg([int(r["total_ll_dcache_misses"]) for r in results])
-
-    if verified:
-        #await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
-        await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**"))
-    else:
-        #await msg.reply(embed=discord.Embed(title="Benchmark complete (Unverified)", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
-        await msg.reply(embed=discord.Embed(title="Benchmark complete (Unverified)", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**"))
+    title = "Benchmark complete" if verified else "Benchmark complete (Unverified)"
+    text = f"Median: **{ns(med)} ±{ns(dev)}**\nThroughtput: **{size * 1000 / (med+1):.2f}MB/s**"
+    if previous_best is not None and not (abs(previous_best - best) < 100) if best > 1000 else (abs(previous_best - best) < 5):
+        direction = "+" if previous_best < best else "-"
+        text += f"\nChange: **{direction}{ns(abs(previous_best - best))} {abs(((previous_best - best) / (previous_best+1)) * 100):.2f}%**"
+    #await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
+    await msg.reply(embed=discord.Embed(title=title, description=text,color=0xE43A25 if previous_best < best else 0x41E425))
 
     db.commit()
     print("Inserted results into DB")
 
+def get_best(cur: sqlite3.Cursor, day: int, part: int, user: int) -> Optional[int]:
+    return next(cur.execute("""SELECT MIN(time) FROM runs WHERE day = ? AND part = ? AND user = ?""", (day, part, user)))[0]
 
 def get_scores_lb(cur: sqlite3.Cursor, day: int, part: int) -> Iterator[tuple[Optional[str], Optional[int]]]:
     return cur.execute("""SELECT user, MIN(time) FROM runs
