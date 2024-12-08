@@ -25,6 +25,7 @@ foldhash = "0.1"
 memchr = "2"
 mimalloc = { version = "0.1", default-features = false }
 nom = "7"
+nom_locate = "4.2"
 num = "0.4"
 num-traits = "0.2"
 parse-display = "0.10"
