@@ -507,8 +507,13 @@ Be kind and do not abuse :)"""))
             return
 
         if msg.content.startswith("solutions"):
-            # iwearapot + bendn
-            if not msg.author.id == 117530756263182344 and not msg.author.id == 696196765564534825:
+            authorized = [
+                117530756263182344, # iwearapot
+                696196765564534825, # bendn
+                249215681093042186, # alion02
+                673675955616874518, # yuyuko
+            ]
+            if msg.author.id not in authorized:
                 await msg.reply("(For helptext, Direct Message me `help`)")
                 return
 
