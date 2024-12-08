@@ -456,6 +456,51 @@ call to `run` should always perform all of the work.
 Be kind and do not abuse :)"""))
             return
 
+        if msg.content.startswith("inputs"):
+            authorized = [
+                117530756263182344, # iwearapot
+                696196765564534825, # bendn
+                249215681093042186, # alion02
+                673675955616874518, # yuyuko
+            ]
+            if msg.author.id not in authorized:
+                await msg.reply("(For helptext, Direct Message me `help`)")
+                return
+
+            parts = msg.content.split(" ")
+
+            try:
+                day = int(parts[1])
+            except IndexError:
+                day = today()
+            except ValueError:
+                if len(parts) > 2:
+                    # if there were more words passed just skip it
+                    # it probably wasn't for us
+                    return
+
+                await msg.reply("ERR: Passed invalid integer for day")
+                return
+
+            if not (1 <= day <= 25):
+                await msg.reply("ERR: Day not in range (1..=25)")
+                return
+
+            print(f"Inputs for d {day}")
+
+            day_path = f"{day}/"
+            try:
+                onlyfiles = [f for f in listdir(day_path) if isfile(join(day_path, f))]
+            except:
+                await msg.reply(f"Failed to read input files for day {day}, part {part}")
+                return
+
+            for file in onlyfiles:
+                with open(join(day_path, file), "r") as f:
+                    #input = f.read()
+                    await msg.reply(f"Input {file}", file=discord.File(f))
+            return
+
         if msg.content.startswith("solutions"):
             # iwearapot + bendn
             if not msg.author.id == 117530756263182344 and not msg.author.id == 696196765564534825:
