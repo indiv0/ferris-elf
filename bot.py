@@ -248,7 +248,7 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
     #total_ll_dcache_misses = mean([int(r["total_ll_dcache_misses"]) for r in results])
 
     title = "Benchmark complete" if verified else "Benchmark complete (Unverified)"
-    text = f"Median: **{ns(med)} ±{ns(dev)}**\nThroughtput: **{size * 1000 / (med+1):.2f}MB/s**"
+    text = f"Median: **{ns(med)} ±{ns(dev)}**\nThroughput: **{size * 1000 / (med+1):.2f}MB/s**"
     if previous_best is not None and not (abs(previous_best - best) < 100) if best > 1000 else (abs(previous_best - best) < 5):
         direction = "+" if previous_best < best else "-"
         text += f"\nChange: **{direction}{ns(abs(previous_best - best))} {abs(((previous_best - best) / (previous_best+1)) * 100):.2f}%**"
