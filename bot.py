@@ -470,6 +470,9 @@ Be kind and do not abuse :)"""))
                 673675955616874518, # yuyuko
                 512328264543371274, # danielrab
                 88225219411443712,  # giooschi
+                711617112669683784, # starfish
+                395782478192836608, # doge
+                829024113296539658, # max397
             ]
             if msg.author.id not in authorized:
                 await msg.reply("(For helptext, Direct Message me `help`)")
@@ -517,6 +520,9 @@ Be kind and do not abuse :)"""))
                 673675955616874518, # yuyuko
                 512328264543371274, # danielrab
                 88225219411443712,  # giooschi
+                711617112669683784, # starfish
+                395782478192836608, # doge
+                829024113296539658, # max397
             ]
             if msg.author.id not in authorized:
                 await msg.reply("(For helptext, Direct Message me `help`)")
