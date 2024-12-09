@@ -75,7 +75,7 @@ async def run_image(msg: discord.Message, input: str) -> typing.Optional[str]:
         #os.environ['NVIDIA_VISIBLE_DEVICES']='all'
         #os.environ['NVIDIA_DRIVER_CAPABILITIES']='compute,utility'
         #out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./target/release/ferris-elf", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none", runtime="nvidia"))
-        out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./profile.sh", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none"))
+        out = await loop.run_in_executor(None, functools.partial(doc.containers.run, f"ferris-elf-{msg.author.id}", f"timeout 180 ./profile.sh", environment=dict(INPUT=input), remove=True, stdout=True, mem_limit="120g", network_mode="none", cpuset_cpus="0-7,16-23"))
         out = out.decode("utf-8")
         print(out)
         return str(out)
