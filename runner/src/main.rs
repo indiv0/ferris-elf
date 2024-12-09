@@ -17,14 +17,39 @@ impl<T: Copy> IntoInput<T> for T {
 
 impl IntoInput<&[u8]> for Vec<u8> {
     fn into_input(self) -> &'static [u8] {
-        self.leak()
+        leak_to_page_aligned(self.leak())
     }
 }
 
 impl IntoInput<&str> for Vec<u8> {
     fn into_input(self) -> &'static str {
-        std::str::from_utf8(self.leak()).unwrap()
+        let aligned = leak_to_page_aligned(self.leak());
+        std::str::from_utf8(aligned).unwrap()
     }
+}
+
+fn leak_to_page_aligned(s: &[u8]) -> &'static [u8] {
+    if s.is_empty() {
+        #[repr(align(16384))]
+        struct Aligned([u8; 0]);
+        return const { &Aligned([]).0 };
+    }
+
+    let layout = std::alloc::Layout::for_value(s)
+        .align_to(16 * 1024)
+        .expect("can't align layout");
+
+    // SAFETY: We checked that s is not empty, thus the layout has size > 0
+    let ptr = unsafe { std::alloc::alloc(layout) };
+    if ptr.is_null() {
+        std::alloc::handle_alloc_error(layout);
+    }
+
+    // SAFETY: The pointer is not null and is valid for at least the layout of s
+    unsafe { std::ptr::copy_nonoverlapping(s.as_ptr(), ptr, s.len()) };
+
+    // SAFETY: The pointer is not null and is valid for at least the layout of s
+    unsafe { std::slice::from_raw_parts(ptr, s.len()) }
 }
 
 fn main() {
