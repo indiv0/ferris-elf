@@ -5,6 +5,7 @@ import sqlite3
 import io
 import functools
 import os
+import httpx
 import typing
 from typing import Iterator, Optional, Union
 from time import monotonic_ns
@@ -312,6 +313,15 @@ class MyBot(discord.Client):
                 msg = await self.queue.get()
                 print(f"Processing request for {msg.author.name}")
                 code = await msg.attachments[0].read()
+                if code[:4] == b'http':
+                    async with httpx.AsyncClient() as client:
+                        print(code.decode("utf8"))
+                        r = await client.get(code.decode("utf8"))
+                        code = []
+                        r.encoding = "utf-8"
+                        async for chunk in r.aiter_bytes():
+                            code += chunk
+                    code = bytes(code)
                 parts = [p for p in msg.content.split(" ") if p]
 
                 if len(parts) < 2:
