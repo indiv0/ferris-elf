@@ -300,38 +300,7 @@ async def formatted_scores_for(author: Union[discord.User, discord.Member], bot:
     return builder.getvalue()
 
 
-# print(benchmark(1234, code))
-class MyBot(discord.Client):
-    queue = asyncio.Queue[discord.Message]()
-
-    async def on_ready(self) -> None:
-        print("Logged in as", self.user)
-
-        while True:
-            try:
-                msg = await self.queue.get()
-                print(f"Processing request for {msg.author.name}")
-                code = await msg.attachments[0].read()
-                parts = [p for p in msg.content.split(" ") if p]
-
-                if len(parts) < 2:
-                    await msg.reply("Looks like you forgot to specify `<day> <part>`. Submit again, with a message like `4 2` if your code is for day 4 part 2.")
-                    continue
-
-                day = int((parts[0:1] or (today(), ))[0])
-                part = int((parts[1:2] or (1, ))[0])
-
-                await benchmark(msg, code, day, part)
-
-                self.queue.task_done()
-            except Exception as err:
-                print("Queue loop exception!", err)
-
-    async def on_message(self, msg: discord.Message) -> None:
-        if msg.author.bot:
-            return
-
-        if msg.content.startswith("aoc"):
+async def leaderboard_cmd(client: discord.Client, msg: discord.Message) -> None:
 
             timeit = monotonic_ns()
 
@@ -362,8 +331,8 @@ class MyBot(discord.Client):
 
             cur = db.cursor()
 
-            part1 = await formatted_scores_for(msg.author, self, cur, day, 1)
-            part2 = await formatted_scores_for(msg.author, self, cur, day, 2)
+            part1 = await formatted_scores_for(msg.author, client, cur, day, 1)
+            part2 = await formatted_scores_for(msg.author, client, cur, day, 2)
             
             embed = discord.Embed(title=f"Top 10 fastest toboggans for day {day}", color=0xE84611)
 
@@ -379,9 +348,9 @@ class MyBot(discord.Client):
             await msg.reply(embed=embed)
             return
 
-        if not isinstance(msg.channel, discord.DMChannel):
-            return
-        
+
+async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
+
         if msg.content == "help":
             await msg.reply(embed=discord.Embed(title="Ferris Elf help page", color=0xE84611, description="""
 **help** - Send this message
@@ -632,14 +601,57 @@ Be kind and do not abuse :)"""))
             await msg.reply("Please provide the code as a file attachment")
             return
 
-        if not self.queue.empty():
+        if not client.queue.empty():
             await msg.reply("Benchmark queued...", mention_author=False)
         else:
             await msg.reply("Benchmark running...", mention_author=False)
 
-        print("Queued for", msg.author, "(Queue length)", self.queue.qsize())
-        self.queue.put_nowait(msg)        
+        print("Queued for", msg.author, "(Queue length)", client.queue.qsize())
+        client.queue.put_nowait(msg)        
 
+
+
+
+# print(benchmark(1234, code))
+class MyBot(discord.Client):
+    queue = asyncio.Queue[discord.Message]()
+
+    async def on_ready(self) -> None:
+        print("Logged in as", self.user)
+
+        while True:
+            try:
+                msg = await self.queue.get()
+                print(f"Processing request for {msg.author.name}")
+                code = await msg.attachments[0].read()
+                parts = [p for p in msg.content.split(" ") if p]
+
+                if len(parts) < 2:
+                    await msg.reply("Looks like you forgot to specify `<day> <part>`. Submit again, with a message like `4 2` if your code is for day 4 part 2.")
+                    continue
+
+                day = int((parts[0:1] or (today(), ))[0])
+                part = int((parts[1:2] or (1, ))[0])
+
+                await benchmark(msg, code, day, part)
+
+                self.queue.task_done()
+            except Exception as err:
+                print("Queue loop exception!", err)
+
+    async def on_message(self, msg: discord.Message) -> None:
+        if msg.author.bot:
+            return
+
+        if msg.content.startswith("aoc"):
+            return await leaderboard_cmd(self, msg)
+
+        if not isinstance(msg.channel, discord.DMChannel):
+            return
+
+        return await handle_dm_commands(self, msg)
+        
+    
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
