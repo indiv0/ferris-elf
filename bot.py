@@ -10,7 +10,6 @@ from typing import Iterator, Optional, Union
 from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
-from datetime import datetime, timedelta, timezone
 from discord.utils import escape_markdown
 from statistics import median, stdev
 from itertools import chain
