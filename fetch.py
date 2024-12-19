@@ -6,13 +6,11 @@ from datetime import datetime, timedelta, timezone
 from os.path import isfile, join
 
 year = "2024"
-root = f"/home/indiv0/src/ferris-elf"
 keys = filter(
     None, [os.getenv("AOC_TOKEN_1"), os.getenv("AOC_TOKEN_2"), os.getenv("AOC_TOKEN_3")]
 )
 
-base_input_dir: Final = root
-
+base_input_dir: Final = "."
 
 def get_year_input_dir(year: int | str) -> str:
     # FIXME(ultrabear): at some point the structure can be changed to be multiyear, add stubs for it now
