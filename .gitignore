@@ -1,4 +1,5 @@
 /database.db
+/database-backup.db
 /venv/
 /.env
 /1/
