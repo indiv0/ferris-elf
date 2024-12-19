@@ -1,5 +1,6 @@
 /database.db
 /database-backup.db
+/logs.txt
 /venv/
 /.env
 /1/
