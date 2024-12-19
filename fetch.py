@@ -1,9 +1,10 @@
 import requests
-import os, sys
+import os
+import sys
 from datetime import datetime, timedelta, timezone
 
 year = "2024"
-root = f"/home/indiv0/src/ferris-elf"
+root = "/home/indiv0/src/ferris-elf"
 keys = filter(
     None, [os.getenv("AOC_TOKEN_1"), os.getenv("AOC_TOKEN_2"), os.getenv("AOC_TOKEN_3")]
 )
