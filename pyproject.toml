@@ -10,3 +10,8 @@ dependencies = [
     "requests>=2.32.3",
     "strip-ansi>=0.1.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.3",
+]
