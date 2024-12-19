@@ -15,6 +15,11 @@ from discord.utils import escape_markdown
 from statistics import median, mean, stdev
 from itertools import chain
 
+# local import
+import fetch
+
+from fetch import today
+
 doc = docker.from_env()
 db = sqlite3.connect("database.db")
 
@@ -33,12 +38,6 @@ cur.execute("VACUUM")
 cur.execute("ANALYZE")
 
 db.commit()
-
-
-def today() -> int:
-    utc = datetime.now(timezone.utc)
-    offset = timedelta(hours=-5)
-    return min((utc + offset).day, 25)
 
 
 async def build_image(msg: discord.Message, solution: bytes) -> bool:
@@ -206,9 +205,9 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
     if not build:
         return
 
-    day_path = f"{day}/"
+    day_path = fetch.get_day_input_dir(fetch.year, day)
     try:
-        onlyfiles = [f for f in listdir(day_path) if isfile(join(day_path, f))]
+        onlyfiles = fetch.get_input_filenames(fetch.year, day)
     except:
         await msg.reply(f"Failed to read input files for day {day}, part {part}")
         return
@@ -587,7 +586,7 @@ Be kind and do not abuse :)""",
 
         print(f"Inputs for d {day}")
 
-        day_path = f"{day}/"
+        day_path = fetch.get_day_input_dir(fetch.year, day)
         try:
             onlyfiles = [f for f in listdir(day_path) if isfile(join(day_path, f))]
         except:
