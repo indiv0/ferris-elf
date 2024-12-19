@@ -400,6 +400,7 @@ itertools = "0.13"
 foldhash = "0.1"
 memchr = "2"
 mimalloc = { version = "0.1", default-features = false }
+ndarray = "0.16"
 nom = "7"
 nom_locate = "4.2"
 num = "0.4"
@@ -442,6 +443,7 @@ Be kind and do not abuse :)"""))
                 711617112669683784, # starfish
                 395782478192836608, # doge
                 829024113296539658, # max397
+                1308148297843605504, # mrpink
             ]
             if msg.author.id not in authorized:
                 await msg.reply("(For helptext, Direct Message me `help`)")
@@ -492,6 +494,7 @@ Be kind and do not abuse :)"""))
                 711617112669683784, # starfish
                 395782478192836608, # doge
                 829024113296539658, # max397
+                1308148297843605504, # mrpink
             ]
             if msg.author.id not in authorized:
                 await msg.reply("(For helptext, Direct Message me `help`)")

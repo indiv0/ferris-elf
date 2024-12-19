@@ -24,6 +24,7 @@ itertools = "0.13"
 foldhash = "0.1"
 memchr = "2"
 mimalloc = { version = "0.1", default-features = false }
+ndarray = "0.16"
 nom = "7"
 nom_locate = "4.2"
 num = "0.4"
