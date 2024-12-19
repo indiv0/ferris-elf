@@ -1,6 +1,7 @@
 from typing import Final
 import requests
-import os, sys
+import os
+import sys
 
 from datetime import datetime, timedelta, timezone
 from os.path import isfile, join

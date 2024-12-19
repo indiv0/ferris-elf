@@ -10,9 +10,8 @@ from typing import Iterator, Optional, Union
 from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
-from datetime import datetime, timedelta, timezone
 from discord.utils import escape_markdown
-from statistics import median, mean, stdev
+from statistics import median, stdev
 from itertools import chain
 
 # local import
@@ -92,7 +91,7 @@ async def run_image(msg: discord.Message, input: str) -> typing.Optional[str]:
             functools.partial(
                 doc.containers.run,
                 f"ferris-elf-{msg.author.id}",
-                f"timeout 180 ./profile.sh",
+                "timeout 180 ./profile.sh",
                 environment=dict(INPUT=input),
                 remove=True,
                 stdout=True,
@@ -134,45 +133,6 @@ class ResultDict(typing.TypedDict, total=False):
     min: int
 
 
-async def solutions_for(
-    author: Union[discord.User, discord.Member],
-    bot: discord.Client,
-    cur: sqlite3.Cursor,
-    day: int,
-    part: int,
-) -> str:
-    builder = io.StringIO()
-
-    # If the message was not sent in a DM, get the author's guild.
-    if isinstance(author, discord.Member):
-        # FIXME [NP]: Is this redundant because we have the `author.guild` already?
-        guild = bot.get_guild(author.guild.id)
-    else:
-        guild = None
-
-    for opt_user, bench_time in get_scores_lb(cur, day, part):
-        if opt_user is None or bench_time is None:
-            continue
-
-        user = int(opt_user)
-
-        # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
-        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
-        if guild is None or guild.get_member(user) is None:
-            userobj = bot.get_user(user) or await bot.fetch_user(user)
-            if userobj:
-                builder.write(
-                    f"\t{escape_markdown(userobj.name)}: **{ns(bench_time)}**\n"
-                )
-            continue
-        builder.write(f"\t<@{user}>: **{ns(bench_time)}**\n")
-
-        if len(builder.getvalue()) > 800:
-            break
-
-    return builder.getvalue()
-
-
 def solutions_for(
     cur: sqlite3.Cursor, day: int, part: int
 ) -> Iterator[tuple[Optional[int], Optional[int]]]:
@@ -208,7 +168,9 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
     day_path = fetch.get_day_input_dir(fetch.year, day)
     try:
         onlyfiles = fetch.get_input_filenames(fetch.year, day)
-    except:
+    except Exception:
+        # FIXME(ultrabear): excepting on Exception instead of BaseException means things like KeyboardInterrupt
+        # wont be caught, but there is probably a more specific exception to catch here
         await msg.reply(f"Failed to read input files for day {day}, part {part}")
         return
 
@@ -321,7 +283,7 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
     # total_ll_dcache_misses = mean([int(r["total_ll_dcache_misses"]) for r in results])
 
     title = "Benchmark complete" if verified else "Benchmark complete (Unverified)"
-    text = f"Median: **{ns(med)} ±{ns(dev)}**\nThroughput: **{size * 1000 / (med+1):.2f}MB/s**"
+    text = f"Median: **{ns(med)} ±{ns(dev)}**\nThroughput: **{size * 1000 / (med + 1):.2f}MB/s**"
     if previous_best is not None:
         if (
             not (abs(previous_best - best) < 100)
@@ -329,7 +291,7 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
             else (abs(previous_best - best) < 5)
         ):
             direction = "+" if previous_best < best else "-"
-            text += f"\nChange: **{direction}{ns(abs(previous_best - best))} {abs(((previous_best - best) / (previous_best+1)) * 100):.2f}%**"
+            text += f"\nChange: **{direction}{ns(abs(previous_best - best))} {abs(((previous_best - best) / (previous_best + 1)) * 100):.2f}%**"
     # await msg.reply(embed=discord.Embed(title="Benchmark complete", description=f"Median: **{ns(median)}**\nAverage: **{ns(average)}**\nTotal Memory Accesses: **{total_memory_accesses:,.2f}**\nTotal L1 I-Cache Misses: **{total_l1_icache_misses:,.2f}**\nTotal LL I-Cache Misses: **{total_ll_icache_misses:,.2f}**\nTotal L1 D-Cache Misses: **{total_l1_dcache_misses:,.2f}**\nTotal LL D-Cache Misses: **{total_ll_dcache_misses:,.2f}**"))
     await msg.reply(
         embed=discord.Embed(
@@ -589,8 +551,10 @@ Be kind and do not abuse :)""",
         day_path = fetch.get_day_input_dir(fetch.year, day)
         try:
             onlyfiles = [f for f in listdir(day_path) if isfile(join(day_path, f))]
-        except:
-            await msg.reply(f"Failed to read input files for day {day}, part {part}")
+        except Exception:
+            # FIXME(ultrabear): excepting on Exception instead of BaseException means things like KeyboardInterrupt
+            # wont be caught, but there is probably a more specific exception to catch here
+            await msg.reply(f"Failed to read input files for day {day}")
             return
 
         for file in onlyfiles:
@@ -716,8 +680,10 @@ Be kind and do not abuse :)""",
         cur = db.cursor()
         # cur.execute("INSERT INTO solutions VALUES (?, ?, ?, ?, ?)", (input_id, day, part, answer, answer))
 
+        # FIXME(ultrabear): part has been replaced with a quoted string because it is not init as a variable
+        # this entire section of code is a deletion candidate too, assess after ruff check pass is completed
         await msg.reply(
-            f"Submitted answer {answer} for day {day} part {part} input {input_id}"
+            f"Submitted answer {answer} for day {day} part {'part'} input {input_id}"
         )
         return
 
