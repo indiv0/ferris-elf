@@ -14,12 +14,10 @@ keys = list(
     )
 )
 
-base_input_dir: Final = "."
+base_input_dir: Final = "aoc_inputs"
 
 def get_year_input_dir(year: int | str) -> str:
-    # FIXME(ultrabear): at some point the structure can be changed to be multiyear, add stubs for it now
-    _ = year
-    return base_input_dir
+    return f"{base_input_dir}/{year}"
 
 
 def get_day_input_dir(year: int | str, day: int) -> str:
