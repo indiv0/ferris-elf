@@ -522,6 +522,7 @@ Be kind and do not abuse :)""",
             395782478192836608,  # doge
             829024113296539658,  # max397
             1308148297843605504,  # mrpink
+            804940746591174656,  # oklyth
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
@@ -575,6 +576,7 @@ Be kind and do not abuse :)""",
             395782478192836608,  # doge
             829024113296539658,  # max397
             1308148297843605504,  # mrpink
+            804940746591174656,  # oklyth
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
