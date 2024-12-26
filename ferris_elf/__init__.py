@@ -1,11 +1,10 @@
 import docker
 import discord
 import asyncio
-import sqlite3
 import io
 import os
 import functools
-from typing import Iterator, Optional, Union, TypedDict
+from typing import Optional, Union, TypedDict, cast
 from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
@@ -17,24 +16,9 @@ from . import fetch
 
 from .fetch import today
 
+from .database import Database
+
 doc = docker.from_env()
-db = sqlite3.connect("database.db")
-
-cur = db.cursor()
-cur.execute("""CREATE TABLE IF NOT EXISTS runs 
-    (user TEXT, code TEXT, day INTEGER, part INTEGER, time REAL, answer INTEGER, answer2)""")
-cur.execute("""CREATE TABLE IF NOT EXISTS solutions 
-    (key TEXT, day INTEGER, part INTEGER, answer INTEGER, answer2)""")
-
-# Implementation details: https://github.com/indiv0/ferris-elf/issues/7
-cur.execute("CREATE INDEX IF NOT EXISTS runs_index ON runs (day, part, user, time)")
-
-# run these on startup to clean up database
-print("Running database maintenance tasks, this may take a while")
-cur.execute("VACUUM")
-cur.execute("ANALYZE")
-
-db.commit()
 
 
 async def build_image(msg: discord.Message, solution: bytes) -> bool:
@@ -123,7 +107,7 @@ def ns(v: float) -> str:
     return f"{v:.0f}ns"
 
 
-class ResultDict(TypedDict, total=False):
+class ResultDict(TypedDict):
     answer: str
     average: int
     median: int
@@ -131,22 +115,20 @@ class ResultDict(TypedDict, total=False):
     min: int
 
 
-def solutions_for(
-    cur: sqlite3.Cursor, day: int, part: int
-) -> Iterator[tuple[Optional[int], Optional[int]]]:
-    return cur.execute(
-        """SELECT answer2, COUNT(*)
-        FROM runs
-        WHERE day = ? AND part = ?
-        GROUP BY answer2""",
-        (day, part),
-    )
+class CacheGrindResult(ResultDict, total=False):
+    total_memory_accesses: int
+    total_l1_icache_misses: int
+    total_ll_icache_misses: int
+    total_l1_dcache_misses: int
+    total_ll_dcache_misses: int
 
 
-def formatted_solutions_for(cur: sqlite3.Cursor, day: int, part: int) -> str:
+
+
+def formatted_solutions_for(db: Database, day: int, part: int) -> str:
     builder = io.StringIO()
 
-    for answer, count in solutions_for(cur, day, part):
+    for answer, count in db.solutions_for(day, part):
         if answer is None or count is None:
             continue
 
@@ -158,7 +140,9 @@ def formatted_solutions_for(cur: sqlite3.Cursor, day: int, part: int) -> str:
     return builder.getvalue()
 
 
-async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> None:
+async def benchmark(
+    msg: discord.Message, db: Database, code: bytes, day: int, part: int
+) -> None:
     build = await build_image(msg, code)
     if not build:
         return
@@ -174,17 +158,13 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
 
     verified = False
     results = []
-    previous_best = get_best(cur, day, part, msg.author.id)
+    previous_best = db.get_best(day, part, msg.author.id)
     size = 0
     for i, file in enumerate(onlyfiles):
-        rows = db.cursor().execute(
-            "SELECT answer2 FROM solutions WHERE key = ? AND day = ? AND part = ?",
-            (file, day, part),
-        )
-        verify = None
-        for row in rows:
-            print("Verify", row[0], "file", file)
-            verify = str(row[0]).strip()
+        verify = db.get_answer(file, day, part)
+
+        if verify is not None:
+            print("Verify", verify, "file", file)
 
         with open(join(day_path, file), "r") as f:
             input = f.read()
@@ -196,7 +176,7 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
             return
         # await status.delete()
 
-        result: ResultDict = {}
+        result = cast(CacheGrindResult, {})
         for line in out.splitlines():
             if line.startswith("FERRIS_ELF_ANSWER "):
                 result["answer"] = str(line[18:]).strip()
@@ -257,17 +237,8 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
         results.append(result)
 
     for result in results:
-        cur.execute(
-            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                str(msg.author.id),
-                code,
-                day,
-                part,
-                result["median"],
-                result["answer"],
-                result["answer"],
-            ),
+        db.insert_run(
+            msg.author.id, code, day, part, result["median"], result["answer"]
         )
     best = min([int(r["median"]) for r in results])
     med = median([int(r["median"]) for r in results])
@@ -305,30 +276,10 @@ async def benchmark(msg: discord.Message, code: bytes, day: int, part: int) -> N
     print("Inserted results into DB")
 
 
-def get_best(cur: sqlite3.Cursor, day: int, part: int, user: int) -> Optional[int]:
-    return next(
-        cur.execute(
-            """SELECT MIN(time) FROM runs WHERE day = ? AND part = ? AND user = ?""",
-            (day, part, user),
-        )
-    )[0]
-
-
-def get_scores_lb(
-    cur: sqlite3.Cursor, day: int, part: int
-) -> Iterator[tuple[Optional[str], Optional[int]]]:
-    return cur.execute(
-        """SELECT user, MIN(time) FROM runs
-        WHERE day = ? AND part = ?
-        GROUP BY user ORDER BY time""",
-        (day, part),
-    )
-
-
 async def formatted_scores_for(
     author: Union[discord.User, discord.Member],
     bot: discord.Client,
-    cur: sqlite3.Cursor,
+    db: Database,
     day: int,
     part: int,
 ) -> str:
@@ -341,7 +292,7 @@ async def formatted_scores_for(
     else:
         guild = None
 
-    for opt_user, bench_time in get_scores_lb(cur, day, part):
+    for opt_user, bench_time in db.get_scores_lb(day, part):
         if opt_user is None or bench_time is None:
             continue
 
@@ -364,7 +315,9 @@ async def formatted_scores_for(
     return builder.getvalue()
 
 
-async def leaderboard_cmd(client: discord.Client, msg: discord.Message) -> None:
+async def leaderboard_cmd(
+    client: discord.Client, db: Database, msg: discord.Message
+) -> None:
     timeit = monotonic_ns()
 
     parts = msg.content.split(" ")
@@ -392,10 +345,8 @@ async def leaderboard_cmd(client: discord.Client, msg: discord.Message) -> None:
 
     print(f"Best for d {day}")
 
-    cur = db.cursor()
-
-    part1 = await formatted_scores_for(msg.author, client, cur, day, 1)
-    part2 = await formatted_scores_for(msg.author, client, cur, day, 2)
+    part1 = await formatted_scores_for(msg.author, client, db, day, 1)
+    part2 = await formatted_scores_for(msg.author, client, db, day, 2)
 
     embed = discord.Embed(
         title=f"Top 10 fastest toboggans for day {day}", color=0xE84611
@@ -559,7 +510,7 @@ Be kind and do not abuse :)""",
             return
 
         for file in onlyfiles:
-            with open(join(day_path, file), "r") as f:
+            with open(join(day_path, file), "rb") as f:
                 # input = f.read()
                 await msg.reply(f"Input {file}", file=discord.File(f))
         return
@@ -605,10 +556,9 @@ Be kind and do not abuse :)""",
             return
 
         print(f"Solutions for d {day}")
-        cur = db.cursor()
 
-        part1 = formatted_solutions_for(cur, day, 1)
-        part2 = formatted_solutions_for(cur, day, 2)
+        part1 = formatted_solutions_for(client.db, day, 1)
+        part2 = formatted_solutions_for(client.db, day, 2)
 
         embed = discord.Embed(title=f"Submitted answers for day {day}", color=0xE84611)
 
@@ -680,7 +630,6 @@ Be kind and do not abuse :)""",
             return
 
         print(f"Approving for d {day}")
-        cur = db.cursor()
         # cur.execute("INSERT INTO solutions VALUES (?, ?, ?, ?, ?)", (input_id, day, part, answer, answer))
 
         # FIXME(ultrabear): part has been replaced with a quoted string because it is not init as a variable
@@ -706,6 +655,7 @@ Be kind and do not abuse :)""",
 # print(benchmark(1234, code))
 class MyBot(discord.Client):
     queue = asyncio.Queue[discord.Message]()
+    db: Database
 
     async def on_ready(self) -> None:
         print("Logged in as", self.user)
@@ -726,7 +676,7 @@ class MyBot(discord.Client):
                 day = int((parts[0:1] or (today(),))[0])
                 part = int((parts[1:2] or (1,))[0])
 
-                await benchmark(msg, code, day, part)
+                await benchmark(msg, self.db, code, day, part)
 
                 self.queue.task_done()
             except Exception as err:
@@ -737,13 +687,12 @@ class MyBot(discord.Client):
             return
 
         if msg.content.startswith("aoc"):
-            return await leaderboard_cmd(self, msg)
+            return await leaderboard_cmd(self, self.db, msg)
 
         if not isinstance(msg.channel, discord.DMChannel):
             return
 
         return await handle_dm_commands(self, msg)
-
 
 
 def main():
@@ -756,6 +705,7 @@ def main():
     assert token is not None, "No discord token passed"
 
     bot = MyBot(intents=intents)
+    bot.db = Database("database.db")
     bot.run(token)
 
 
