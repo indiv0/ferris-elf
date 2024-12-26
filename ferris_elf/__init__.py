@@ -3,10 +3,9 @@ import discord
 import asyncio
 import sqlite3
 import io
-import functools
 import os
-import typing
-from typing import Iterator, Optional, Union
+import functools
+from typing import Iterator, Optional, Union, TypedDict
 from time import monotonic_ns
 from os import listdir
 from os.path import isfile, join
@@ -14,10 +13,9 @@ from discord.utils import escape_markdown
 from statistics import median, stdev
 from itertools import chain
 
-# local import
-import fetch
+from . import fetch
 
-from fetch import today
+from .fetch import today
 
 doc = docker.from_env()
 db = sqlite3.connect("database.db")
@@ -77,7 +75,7 @@ async def build_image(msg: discord.Message, solution: bytes) -> bool:
     #    await status.delete()
 
 
-async def run_image(msg: discord.Message, input: str) -> typing.Optional[str]:
+async def run_image(msg: discord.Message, input: str) -> Optional[str]:
     print(f"Running for {msg.author.name}")
     # input = ','.join([str(int(x)) for x in input])
     # status = await msg.reply("Running benchmark...", mention_author=False)
@@ -125,7 +123,7 @@ def ns(v: float) -> str:
     return f"{v:.0f}ns"
 
 
-class ResultDict(typing.TypedDict, total=False):
+class ResultDict(TypedDict, total=False):
     answer: str
     average: int
     median: int
@@ -744,13 +742,19 @@ class MyBot(discord.Client):
         return await handle_dm_commands(self, msg)
 
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
 
-token = os.getenv("DISCORD_TOKEN")
+def main():
+    intents = discord.Intents.default()
+    intents.message_content = True
+    intents.members = True
 
-assert token is not None, "No discord token passed"
+    token = os.getenv("DISCORD_TOKEN")
 
-bot = MyBot(intents=intents)
-bot.run(token)
+    assert token is not None, "No discord token passed"
+
+    bot = MyBot(intents=intents)
+    bot.run(token)
+
+
+if __name__ == "__main__":
+    main()
