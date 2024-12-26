@@ -480,6 +480,7 @@ nom_locate = "4.2"
 num = "0.4"
 num-traits = "0.2"
 parse-display = "0.10"
+paste = "1.0.15"
 pathfinding = "4"
 pollster = "0.4"
 radsort = "0.1"
@@ -521,6 +522,7 @@ Be kind and do not abuse :)""",
             829024113296539658,  # max397
             1308148297843605504,  # mrpink
             804940746591174656,  # oklyth
+            1312479736748048424,  # __main_character__
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
@@ -575,6 +577,7 @@ Be kind and do not abuse :)""",
             829024113296539658,  # max397
             1308148297843605504,  # mrpink
             804940746591174656,  # oklyth
+            1312479736748048424,  # __main_character__
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
