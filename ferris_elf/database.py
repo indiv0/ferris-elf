@@ -77,6 +77,25 @@ class Database:
             (day, part),
         )
 
+    def get_best_lb(
+        self, part: int
+    ) -> Iterator[tuple[Optional[int], Optional[int], Optional[str], Optional[int]]]:
+        return self._get_cur().execute(
+            """SELECT s.day, s.part, r.user, r.time
+            FROM runs r
+            JOIN solutions s ON r.answer2 LIKE s.answer2
+            WHERE (s.day, s.part, r.time) IN (
+                SELECT s.day, s.part, MIN(r.time)
+                FROM runs r
+                JOIN solutions s ON r.day = s.day AND r.part = s.part AND r.answer2 LIKE s.answer2
+                WHERE r.part=? AND s.part=?
+                GROUP BY s.day, s.part
+            )
+            GROUP BY s.day, s.part, r.user
+            ORDER BY s.day, s.part""",
+            (part, part),
+        )
+
     def get_answer(self, key: str, day: int, part: int) -> Optional[str]:
         row = self._get_cur().execute(
             "SELECT answer2 FROM solutions WHERE key = ? AND day = ? AND part = ?",

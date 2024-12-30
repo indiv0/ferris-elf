@@ -314,6 +314,43 @@ async def formatted_scores_for(
 
     return builder.getvalue()
 
+async def formatted_best(
+    author: Union[discord.User, discord.Member],
+    bot: discord.Client,
+    db: Database,
+    part: int,
+) -> str:
+    builder = io.StringIO()
+
+    # If the message was not sent in a DM, get the author's guild.
+    if isinstance(author, discord.Member):
+        # FIXME [NP]: Is this redundant because we have the `author.guild` already?
+        guild = bot.get_guild(author.guild.id)
+    else:
+        guild = None
+
+    for opt_day, _opt_part, opt_user, opt_bench_time in db.get_best_lb(part):
+        if opt_day is None or _opt_part is None or opt_user is None or opt_bench_time is None:
+            continue
+
+        user = int(opt_user)
+
+        # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
+        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
+        if guild is None or guild.get_member(user) is None:
+            userobj = bot.get_user(user) or await bot.fetch_user(user)
+            if userobj:
+                builder.write(
+                    f"\td{opt_day}: {escape_markdown(userobj.name)} - **{ns(opt_bench_time)}**\n"
+                )
+            continue
+        builder.write(f"\td{opt_day}: <@{user}> - **{ns(opt_bench_time)}**\n")
+
+        if len(builder.getvalue()) > 800:
+            break
+
+    return builder.getvalue()
+
 
 async def leaderboard_cmd(
     client: discord.Client, db: Database, msg: discord.Message
@@ -364,6 +401,42 @@ async def leaderboard_cmd(
     await msg.reply(embed=embed)
     return
 
+async def best_cmd(
+    client: discord.Client, db: Database, msg: discord.Message
+) -> None:
+    timeit = monotonic_ns()
+
+    parts = msg.content.split(" ")
+
+    if len(parts) > 2:
+        # if there were more words passed just skip it
+        # it probably wasn't for us
+        return
+
+    if len(parts) == 2 and parts[1] == "help":
+        await msg.reply("(For helptext, Direct Message me `help`)")
+        return
+
+    print(f"Best overall")
+
+    best1 = await formatted_best(msg.author, client, db, 1)
+    best2 = await formatted_best(msg.author, client, db, 2)
+
+    embed = discord.Embed(
+        title=f"Top fastest toboggans for all days", color=0xE84611
+    )
+
+    if best1:
+        embed.add_field(name="Part 1", value=best1, inline=True)
+    if best2:
+        embed.add_field(name="Part 2", value=best2, inline=True)
+
+    end = ns(monotonic_ns() - timeit)
+
+    embed.set_footer(text=f"Computed in {end}")
+
+    await msg.reply(embed=embed)
+    return
 
 async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
     if msg.content == "help":
@@ -375,6 +448,7 @@ async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
 **help** - Send this message
 **info** - Some useful information about benchmarking
 **aoc _[day]_** - Best times so far
+**best** - Best times for all days and parts
 **_[day]_ _[part]_ <attachment>** - Benchmark attached code
 
 If [_day_] and/or [_part_] is ommited, they are assumed to be today and part 1
@@ -688,6 +762,9 @@ class MyBot(discord.Client):
 
         if msg.content.startswith("aoc"):
             return await leaderboard_cmd(self, self.db, msg)
+
+        if msg.content.startswith("best"):
+            return await best_cmd(self, self.db, msg)
 
         if not isinstance(msg.channel, discord.DMChannel):
             return
