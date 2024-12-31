@@ -11,6 +11,7 @@ from os.path import isfile, join
 from discord.utils import escape_markdown
 from statistics import median, stdev
 from itertools import chain
+from datetime import datetime, timezone
 
 from . import fetch
 
@@ -234,9 +235,10 @@ async def benchmark(
 
         results.append(result)
 
+    now = int(datetime.now(timezone.utc).timestamp())
     for result in results:
         db.insert_run(
-            msg.author.id, code, day, part, result["median"], result["answer"]
+            msg.author.id, code, day, part, result["median"], result["answer"], now
         )
     best = min([int(r["median"]) for r in results])
     med = median([int(r["median"]) for r in results])

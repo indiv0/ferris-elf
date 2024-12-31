@@ -9,8 +9,9 @@ class Database:
         db = sqlite3.connect(file)
 
         cur = db.cursor()
+        # Migration: ALTER TABLE runs ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0;
         cur.execute("""CREATE TABLE IF NOT EXISTS runs 
-            (user TEXT, code TEXT, day INTEGER, part INTEGER, time REAL, answer INTEGER, answer2)""")
+            (user TEXT, code TEXT, day INTEGER, part INTEGER, time REAL, answer INTEGER, answer2, timestamp INTEGER NOT NULL DEFAULT 0)""")
         cur.execute("""CREATE TABLE IF NOT EXISTS solutions 
             (key TEXT, day INTEGER, part INTEGER, answer INTEGER, answer2)""")
 
@@ -117,9 +118,10 @@ class Database:
         part: int,
         median: float,
         answer: str,
+        timestamp: int,
     ):
         self._get_cur().execute(
-            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 author_id,
                 code,
@@ -128,5 +130,6 @@ class Database:
                 median,
                 answer,
                 answer,
+                timestamp,
             ),
         )
