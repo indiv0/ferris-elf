@@ -12,6 +12,7 @@ from discord.utils import escape_markdown
 from statistics import median, stdev
 from itertools import chain
 from datetime import datetime, timezone
+from blake3 import blake3
 
 from . import fetch
 
@@ -236,9 +237,10 @@ async def benchmark(
         results.append(result)
 
     now = int(datetime.now(timezone.utc).timestamp())
+    code_hash = blake3(code).hexdigest()
     for result in results:
         db.insert_run(
-            msg.author.id, code, day, part, result["median"], result["answer"], now
+            msg.author.id, code, day, part, result["median"], result["answer"], now, code_hash
         )
     best = min([int(r["median"]) for r in results])
     med = median([int(r["median"]) for r in results])
@@ -407,7 +409,6 @@ async def leaderboard_cmd(
     await msg.reply(embed=embed)
     return
 
-
 async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
     timeit = monotonic_ns()
 
@@ -441,6 +442,15 @@ async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -
     await msg.reply(embed=embed)
     return
 
+async def debug_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
+    for row_id, opt_code in db.get_runs_without_hash():
+        if opt_code is None:
+            continue
+
+        code_hash = blake3(opt_code).hexdigest()
+        print(f"Setting hash of row {row_id} to {code_hash}")
+        db.update_code_hash(row_id, code_hash)
+    db.commit()
 
 async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
     if msg.content == "help":
@@ -769,6 +779,9 @@ class MyBot(discord.Client):
 
         if msg.content.startswith("best"):
             return await best_cmd(self, self.db, msg)
+
+        if msg.content.startswith("debug"):
+            return await debug_cmd(self, self.db, msg)
 
         if not isinstance(msg.channel, discord.DMChannel):
             return

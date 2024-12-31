@@ -10,8 +10,9 @@ class Database:
 
         cur = db.cursor()
         # Migration: ALTER TABLE runs ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0;
+        # Migration: ALTER TABLE runs ADD COLUMN code_hash TEXT DEFAULT NULL;
         cur.execute("""CREATE TABLE IF NOT EXISTS runs 
-            (user TEXT, code TEXT, day INTEGER, part INTEGER, time REAL, answer INTEGER, answer2, timestamp INTEGER NOT NULL DEFAULT 0)""")
+            (user TEXT, code TEXT, day INTEGER, part INTEGER, time REAL, answer INTEGER, answer2, timestamp INTEGER NOT NULL DEFAULT 0, code_hash TEXT DEFAULT NULL)""")
         cur.execute("""CREATE TABLE IF NOT EXISTS solutions 
             (key TEXT, day INTEGER, part INTEGER, answer INTEGER, answer2)""")
 
@@ -119,9 +120,10 @@ class Database:
         median: float,
         answer: str,
         timestamp: int,
+        code_hash: str,
     ):
         self._get_cur().execute(
-            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 author_id,
                 code,
@@ -131,5 +133,28 @@ class Database:
                 answer,
                 answer,
                 timestamp,
+                code_hash,
             ),
         )
+
+    def get_runs_without_hash(
+        self
+    ) -> Iterator[tuple[int, Optional[bytes]]]:
+        return self._get_cur().execute(
+            """SELECT ROWID,code
+            FROM runs
+            WHERE code_hash IS NULL""",
+        )
+
+    def update_code_hash(
+        self,
+        row_id: int,
+        code_hash: str,
+    ):
+        self._get_cur().execute(
+            """UPDATE runs
+            SET code_hash = ?
+            WHERE ROWID = ?""",
+            (code_hash, row_id),
+        )
+
