@@ -137,6 +137,28 @@ class Database:
             ),
         )
 
+    def update_runs(
+        self,
+        day: int,
+        part: int,
+        median: float,
+        answer: str,
+        code_hash: str,
+    ):
+        self._get_cur().execute(
+            """UPDATE runs
+            SET time = ?, timestamp = 1
+            WHERE timestamp = 0 AND day = ? AND part = ? AND answer = ? AND code_hash = ?""",
+            (
+                median,
+                day,
+                part,
+                answer,
+                code_hash,
+            ),
+        )
+
+
     def get_runs_without_hash(
         self
     ) -> Iterator[tuple[int, Optional[bytes]]]:
@@ -157,4 +179,22 @@ class Database:
             WHERE ROWID = ?""",
             (code_hash, row_id),
         )
+
+    def get_next_invalid_run(
+        self,
+    ) -> Optional[tuple[Optional[int], Optional[int], Optional[str], Optional[bytes], Optional[str]]]:
+        try:
+            return next(self._get_cur().execute(
+                """SELECT day, part, answer, code, code_hash
+                FROM (
+                    SELECT day, part, answer, code, code_hash
+                    FROM runs
+                    WHERE timestamp = 0
+                    GROUP BY day, part, answer, code_hash
+                    ORDER BY ROWID
+                )
+                LIMIT 1""",
+            ))
+        except StopIteration:
+            return None
 
