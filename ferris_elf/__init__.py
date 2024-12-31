@@ -417,13 +417,13 @@ async def best_cmd(
         await msg.reply("(For helptext, Direct Message me `help`)")
         return
 
-    print(f"Best overall")
+    print("Best overall")
 
     best1 = await formatted_best(msg.author, client, db, 1)
     best2 = await formatted_best(msg.author, client, db, 2)
 
     embed = discord.Embed(
-        title=f"Top fastest toboggans for all days", color=0xE84611
+        title="Top fastest toboggans for all days", color=0xE84611
     )
 
     if best1:
