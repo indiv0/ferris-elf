@@ -528,7 +528,7 @@ async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
 **best** - Best times for all days and parts
 **_[day]_ _[part]_ <attachment>** - Benchmark attached code
 
-If [_day_] and/or [_part_] is ommited, they are assumed to be today and part 1
+If [_day_] and/or [_part_] is omitted, they are assumed to be today and part 1
 
 Message <@117530756263182344> for any questions""",
             )
