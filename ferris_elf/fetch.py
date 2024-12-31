@@ -16,6 +16,7 @@ keys = list(
 
 base_input_dir: Final = "aoc_inputs"
 
+
 def get_year_input_dir(year: int | str) -> str:
     return f"{base_input_dir}/{year}"
 
