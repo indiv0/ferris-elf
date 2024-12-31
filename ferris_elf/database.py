@@ -185,6 +185,10 @@ class Database:
         ]
     ]:
         try:
+            # Order the result by random in case a run
+            # with invalid answers is encountered. This
+            # prevents it from blocking the rerun
+            # process.
             return next(
                 self._get_cur().execute(
                     """SELECT day, part, answer, code, code_hash
@@ -195,6 +199,7 @@ class Database:
                     GROUP BY day, part, answer, code_hash
                     ORDER BY ROWID
                 )
+                ORDER BY RANDOM()
                 LIMIT 1""",
                 )
             )
