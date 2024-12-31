@@ -158,10 +158,7 @@ class Database:
             ),
         )
 
-
-    def get_runs_without_hash(
-        self
-    ) -> Iterator[tuple[int, Optional[bytes]]]:
+    def get_runs_without_hash(self) -> Iterator[tuple[int, Optional[bytes]]]:
         return self._get_cur().execute(
             """SELECT ROWID,code
             FROM runs
@@ -182,10 +179,15 @@ class Database:
 
     def get_next_invalid_run(
         self,
-    ) -> Optional[tuple[Optional[int], Optional[int], Optional[str], Optional[bytes], Optional[str]]]:
+    ) -> Optional[
+        tuple[
+            Optional[int], Optional[int], Optional[str], Optional[bytes], Optional[str]
+        ]
+    ]:
         try:
-            return next(self._get_cur().execute(
-                """SELECT day, part, answer, code, code_hash
+            return next(
+                self._get_cur().execute(
+                    """SELECT day, part, answer, code, code_hash
                 FROM (
                     SELECT day, part, answer, code, code_hash
                     FROM runs
@@ -194,7 +196,7 @@ class Database:
                     ORDER BY ROWID
                 )
                 LIMIT 1""",
-            ))
+                )
+            )
         except StopIteration:
             return None
-

@@ -141,7 +141,12 @@ def formatted_solutions_for(db: Database, day: int, part: int) -> str:
 
 
 async def benchmark(
-    msg: discord.Message, db: Database, code: bytes, day: int, part: int, rerun: bool,
+    msg: discord.Message,
+    db: Database,
+    code: bytes,
+    day: int,
+    part: int,
+    rerun: bool,
 ) -> None:
     build = await build_image(msg, code)
     if not build:
@@ -243,7 +248,14 @@ async def benchmark(
             db.update_runs(day, part, result["median"], result["answer"], code_hash)
         else:
             db.insert_run(
-                msg.author.id, code, day, part, result["median"], result["answer"], now, code_hash
+                msg.author.id,
+                code,
+                day,
+                part,
+                result["median"],
+                result["answer"],
+                now,
+                code_hash,
             )
 
     best = min([int(r["median"]) for r in results])
@@ -413,6 +425,7 @@ async def leaderboard_cmd(
     await msg.reply(embed=embed)
     return
 
+
 async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
     timeit = monotonic_ns()
 
@@ -446,7 +459,10 @@ async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -
     await msg.reply(embed=embed)
     return
 
-async def migrate_hash_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
+
+async def migrate_hash_cmd(
+    client: discord.Client, db: Database, msg: discord.Message
+) -> None:
     authorized = [
         117530756263182344,  # iwearapot
     ]
@@ -462,6 +478,7 @@ async def migrate_hash_cmd(client: discord.Client, db: Database, msg: discord.Me
         print(f"Setting hash of row {row_id} to {code_hash}")
         db.update_code_hash(row_id, code_hash)
     db.commit()
+
 
 async def rerun_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
     authorized = [
@@ -479,15 +496,24 @@ async def rerun_cmd(client: discord.Client, db: Database, msg: discord.Message) 
                 return
 
             (opt_day, opt_part, opt_answer, opt_code, opt_code_hash) = opt_invalid_run
-            if opt_day is None or opt_part is None or opt_answer is None or opt_code is None or opt_code_hash is None:
+            if (
+                opt_day is None
+                or opt_part is None
+                or opt_answer is None
+                or opt_code is None
+                or opt_code_hash is None
+            ):
                 await msg.reply("Invalid re-run target.")
                 return
 
-            await msg.reply(f"Re-running d{opt_day}p{opt_part} for code {opt_code_hash}")
+            await msg.reply(
+                f"Re-running d{opt_day}p{opt_part} for code {opt_code_hash}"
+            )
 
             await benchmark(msg, db, opt_code, opt_day, opt_part, True)
         except Exception as err:
             print("Rerun loop exception!", err)
+
 
 async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
     if msg.content == "help":
