@@ -442,7 +442,7 @@ async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -
     await msg.reply(embed=embed)
     return
 
-async def debug_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
+async def migrate_hash_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
     for row_id, opt_code in db.get_runs_without_hash():
         if opt_code is None:
             continue
@@ -780,8 +780,8 @@ class MyBot(discord.Client):
         if msg.content.startswith("best"):
             return await best_cmd(self, self.db, msg)
 
-        if msg.content.startswith("debug"):
-            return await debug_cmd(self, self.db, msg)
+        if msg.content.startswith("migrate-hash"):
+            return await migrate_hash_cmd(self, self.db, msg)
 
         if not isinstance(msg.channel, discord.DMChannel):
             return
