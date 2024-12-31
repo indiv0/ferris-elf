@@ -488,31 +488,29 @@ async def rerun_cmd(client: discord.Client, db: Database, msg: discord.Message) 
         await msg.reply("(For helptext, Direct Message me `help`)")
         return
 
-    while True:
-        try:
-            opt_invalid_run = db.get_next_invalid_run()
-            if opt_invalid_run is None:
-                await msg.reply("No targets to re-run.")
-                return
+    try:
+        opt_invalid_run = db.get_next_invalid_run()
+        if opt_invalid_run is None:
+            await msg.reply("No targets to re-run.")
+            return
 
-            (opt_day, opt_part, opt_answer, opt_code, opt_code_hash) = opt_invalid_run
-            if (
-                opt_day is None
-                or opt_part is None
-                or opt_answer is None
-                or opt_code is None
-                or opt_code_hash is None
-            ):
-                await msg.reply("Invalid re-run target.")
-                return
+        (opt_day, opt_part, opt_answer, opt_code, opt_code_hash) = opt_invalid_run
+        if (
+            opt_day is None
+            or opt_part is None
+            or opt_answer is None
+            or opt_code is None
+            or opt_code_hash is None
+        ):
+            await msg.reply("Invalid re-run target.")
+            return
 
-            await msg.reply(
-                f"Re-running d{opt_day}p{opt_part} for code {opt_code_hash}"
-            )
-
-            await benchmark(msg, db, opt_code, opt_day, opt_part, True)
-        except Exception as err:
-            print("Rerun loop exception!", err)
+        await msg.reply(
+            f"Queued rerun of d{opt_day}p{opt_part} for {opt_code_hash} for {msg.author} (Queue length) {client.queue.qsize()}"
+        )
+        client.queue.put_nowait((msg, opt_code, opt_day, opt_part, True))
+    except Exception as err:
+        print("Rerun loop exception!", err)
 
 
 async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
@@ -800,12 +798,14 @@ Be kind and do not abuse :)""",
         await msg.reply("Benchmark running...", mention_author=False)
 
     print("Queued for", msg.author, "(Queue length)", client.queue.qsize())
-    client.queue.put_nowait(msg)
+    client.queue.put_nowait((msg, None, None, None, False))
 
 
 # print(benchmark(1234, code))
 class MyBot(discord.Client):
-    queue = asyncio.Queue[discord.Message]()
+    queue = asyncio.Queue[
+        tuple[discord.Message, Optional[bytes], Optional[int], Optional[int], bool]
+    ]()
     db: Database
 
     async def on_ready(self) -> None:
@@ -813,21 +813,31 @@ class MyBot(discord.Client):
 
         while True:
             try:
-                msg = await self.queue.get()
-                print(f"Processing request for {msg.author.name}")
-                code = await msg.attachments[0].read()
-                parts = [p for p in msg.content.split(" ") if p]
+                (msg, opt_code, opt_day, opt_part, rerun) = await self.queue.get()
+                if rerun:
+                    if (
+                        opt_code is not None
+                        and opt_day is not None
+                        and opt_part is not None
+                    ):
+                        await benchmark(msg, self.db, opt_code, opt_day, opt_part, True)
 
-                if len(parts) < 2:
-                    await msg.reply(
-                        "Looks like you forgot to specify `<day> <part>`. Submit again, with a message like `4 2` if your code is for day 4 part 2."
-                    )
-                    continue
+                    await rerun_cmd(self, self.db, msg)
+                else:
+                    print(f"Processing request for {msg.author.name}")
+                    code = await msg.attachments[0].read()
+                    parts = [p for p in msg.content.split(" ") if p]
 
-                day = int((parts[0:1] or (today(),))[0])
-                part = int((parts[1:2] or (1,))[0])
+                    if len(parts) < 2:
+                        await msg.reply(
+                            "Looks like you forgot to specify `<day> <part>`. Submit again, with a message like `4 2` if your code is for day 4 part 2."
+                        )
+                        continue
 
-                await benchmark(msg, self.db, code, day, part, False)
+                    day = int((parts[0:1] or (today(),))[0])
+                    part = int((parts[1:2] or (1,))[0])
+
+                    await benchmark(msg, self.db, code, day, part, False)
 
                 self.queue.task_done()
             except Exception as err:
