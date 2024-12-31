@@ -123,8 +123,6 @@ class CacheGrindResult(ResultDict, total=False):
     total_ll_dcache_misses: int
 
 
-
-
 def formatted_solutions_for(db: Database, day: int, part: int) -> str:
     builder = io.StringIO()
 
@@ -314,6 +312,7 @@ async def formatted_scores_for(
 
     return builder.getvalue()
 
+
 async def formatted_best(
     author: Union[discord.User, discord.Member],
     bot: discord.Client,
@@ -330,7 +329,12 @@ async def formatted_best(
         guild = None
 
     for opt_day, _opt_part, opt_user, opt_bench_time in db.get_best_lb(part):
-        if opt_day is None or _opt_part is None or opt_user is None or opt_bench_time is None:
+        if (
+            opt_day is None
+            or _opt_part is None
+            or opt_user is None
+            or opt_bench_time is None
+        ):
             continue
 
         user = int(opt_user)
@@ -401,9 +405,8 @@ async def leaderboard_cmd(
     await msg.reply(embed=embed)
     return
 
-async def best_cmd(
-    client: discord.Client, db: Database, msg: discord.Message
-) -> None:
+
+async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -> None:
     timeit = monotonic_ns()
 
     parts = msg.content.split(" ")
@@ -422,9 +425,7 @@ async def best_cmd(
     best1 = await formatted_best(msg.author, client, db, 1)
     best2 = await formatted_best(msg.author, client, db, 2)
 
-    embed = discord.Embed(
-        title="Top fastest toboggans for all days", color=0xE84611
-    )
+    embed = discord.Embed(title="Top fastest toboggans for all days", color=0xE84611)
 
     if best1:
         embed.add_field(name="Part 1", value=best1, inline=True)
@@ -437,6 +438,7 @@ async def best_cmd(
 
     await msg.reply(embed=embed)
     return
+
 
 async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
     if msg.content == "help":

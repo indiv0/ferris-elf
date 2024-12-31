@@ -29,8 +29,6 @@ class Database:
         self._db = db
         self._cursor: None | sqlite3.Cursor = None
 
-        
-
     def __enter__(self) -> Self:
         self._cursor = self._db.cursor()
         return self
@@ -97,19 +95,29 @@ class Database:
         )
 
     def get_answer(self, key: str, day: int, part: int) -> Optional[str]:
-        row = self._get_cur().execute(
-            "SELECT answer2 FROM solutions WHERE key = ? AND day = ? AND part = ?",
-            (key, day, part),
-        ).fetchone()
+        row = (
+            self._get_cur()
+            .execute(
+                "SELECT answer2 FROM solutions WHERE key = ? AND day = ? AND part = ?",
+                (key, day, part),
+            )
+            .fetchone()
+        )
 
         if row:
             return str(row[0]).strip()
-        else: 
+        else:
             return None
 
-
-    def insert_run(self, author_id: int, code: bytes, day: int, part: int, median: float, answer: str):
-
+    def insert_run(
+        self,
+        author_id: int,
+        code: bytes,
+        day: int,
+        part: int,
+        median: float,
+        answer: str,
+    ):
         self._get_cur().execute(
             "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
@@ -122,4 +130,3 @@ class Database:
                 answer,
             ),
         )
- 
