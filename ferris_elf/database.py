@@ -21,6 +21,10 @@ class Database:
             "CREATE INDEX IF NOT EXISTS runs_index ON runs (day, part, user, time)"
         )
 
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS solutions_idx ON solutions (day, part)"
+        )
+
         # run these on startup to clean up database
         print("Running database maintenance tasks, this may take a while")
         cur.execute("VACUUM")
