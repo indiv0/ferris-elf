@@ -86,7 +86,7 @@ class Database:
     ) -> Iterator[tuple[Optional[int], Optional[int], Optional[str], Optional[int]]]:
         return self._get_cur().execute(
             "SELECT day, part, user, MIN(time) FROM runs WHERE part=? GROUP BY day, part ORDER BY day, part;",
-            part,
+            (part,),
         )
 
     def get_answer(self, key: str, day: int, part: int) -> Optional[str]:
