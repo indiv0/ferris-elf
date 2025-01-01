@@ -623,6 +623,7 @@ Be kind and do not abuse :)""",
             1308148297843605504,  # mrpink
             804940746591174656,  # oklyth
             1312479736748048424,  # __main_character__
+            244613899930828800,  # carl
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
@@ -678,6 +679,7 @@ Be kind and do not abuse :)""",
             1308148297843605504,  # mrpink
             804940746591174656,  # oklyth
             1312479736748048424,  # __main_character__
+            244613899930828800,  # carl
         ]
         if msg.author.id not in authorized:
             await msg.reply("(For helptext, Direct Message me `help`)")
