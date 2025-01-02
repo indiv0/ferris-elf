@@ -338,7 +338,7 @@ async def formatted_best(
     bot: discord.Client,
     db: Database,
     part: int,
-) -> str:
+) -> (str, float):
     builder = io.StringIO()
 
     # If the message was not sent in a DM, get the author's guild.
@@ -347,7 +347,7 @@ async def formatted_best(
         guild = bot.get_guild(author.guild.id)
     else:
         guild = None
-
+    tot = 0
     for opt_day, _opt_part, opt_user, opt_bench_time in db.get_best_lb(part):
         if (
             opt_day is None
@@ -357,6 +357,7 @@ async def formatted_best(
         ):
             continue
 
+        tot += opt_bench_time
         user = int(opt_user)
 
         # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
@@ -367,7 +368,7 @@ async def formatted_best(
                 f"\td{opt_day:<3} **{escape_markdown(userobj.name)}**: **{ns(opt_bench_time)}**\n"
             )
 
-    return builder.getvalue()
+    return (builder.getvalue(), tot)
 
 
 async def leaderboard_cmd(
@@ -436,8 +437,9 @@ async def best_cmd(client: discord.Client, db: Database, msg: discord.Message) -
 
     print("Best overall")
 
-    best1 = await formatted_best(msg.author, client, db, 1)
-    best2 = await formatted_best(msg.author, client, db, 2)
+    best1, p1 = await formatted_best(msg.author, client, db, 1)
+    best2, p2 = await formatted_best(msg.author, client, db, 2)
+    best1 += f"\t⎯⎯⎯\n{ns(p1 + p2)}"
 
     embed = discord.Embed(title="Top fastest toboggans for all days", color=0xE84611)
 
