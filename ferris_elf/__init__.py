@@ -360,18 +360,17 @@ async def formatted_best(
         user = int(opt_user)
 
         # if the aoc command was sent in a guild that isnt the guild of the user we have here, then using <@id>
-        # will render as <@id>, instead of as @person, so we have to fallback to using the name directly
-        if guild is None or guild.get_member(user) is None:
-            userobj = bot.get_user(user) or await bot.fetch_user(user)
-            if userobj:
+        # we have to fallback to using the name directly, due to 60 * 2 * 25 > 1024
+        userobj = bot.get_user(user) or await bot.fetch_user(user)
+        if userobj:
+            if part == 1:
                 builder.write(
-                    f"\td{opt_day}: {escape_markdown(userobj.name)} - **{ns(opt_bench_time)}**\n"
+                    f"\td{opt_day:<3} **{escape_markdown(userobj.name)}**: **{ns(opt_bench_time)}**\n"
                 )
-            continue
-        builder.write(f"\td{opt_day}: <@{user}> - **{ns(opt_bench_time)}**\n")
-
-        if len(builder.getvalue()) > 800:
-            break
+            else:
+                builder.write(
+                    f"\t**{escape_markdown(userobj.name)}**: **{ns(opt_bench_time)}**\n"
+                )
 
     return builder.getvalue()
 
