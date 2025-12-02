@@ -1,5 +1,5 @@
 #![feature(portable_simd)]
-
+#![allow(unused_unsafe)]
 use std::{
     hint::black_box,
     time::{Duration, Instant},
@@ -72,14 +72,14 @@ fn benchmark(input: Vec<u8>) -> (String, [Duration; 100]) {
 
     let mut warmup_iters = 1;
 
-    let answer = format!("{}", ferris_elf::run(input));
+    let answer = format!("{}", unsafe { ferris_elf::run(input) });
 
     println!("Answer: {}, warming up for 5 sec...", answer);
 
     // Warm up the CPU etc for 5 seconds
     let warmup_start = Instant::now();
     while warmup_start.elapsed() < Duration::from_secs(5) {
-        if format!("{}", black_box(ferris_elf::run(black_box(input)))) != answer {
+        if format!("{}", black_box(unsafe { ferris_elf::run(black_box(input)) })) != answer {
             panic!("Solution returned two different answers on same input!")
         }
         warmup_iters += 1;
@@ -97,7 +97,7 @@ fn benchmark(input: Vec<u8>) -> (String, [Duration; 100]) {
     let mut start = Instant::now();
     for sample in 0..100 {
         for _ in 0..iters {
-            let _ = black_box(ferris_elf::run(black_box(input)));
+            let _ = black_box(unsafe { ferris_elf::run(black_box(input)) });
         }
 
         // Record this batch
