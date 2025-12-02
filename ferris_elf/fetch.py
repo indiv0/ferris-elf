@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from os.path import isfile, join
 
-year = "2024"
+year = "2025"
 keys = list(
     filter(
         None,

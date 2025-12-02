@@ -67,11 +67,11 @@ RUN apt-get update -qq && \
   apt-get install -qq --no-install-recommends wget && \
   rm -rf /var/lib/apt/lists/*
 
-# From `rust:1.74.1-bookworm`.
+# From `rust:1.91.1-bookworm`.
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.74.1
+    RUST_VERSION=1.91.1
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
     case "${dpkgArch##*-}" in \
@@ -124,6 +124,7 @@ COPY build.rs build.rs
 COPY Cargo.toml Cargo.toml
 COPY src/main.rs src/main.rs
 COPY src/placeholder.rs src/lib.rs
+RUN chmod +x profile.sh
 ENV RUSTFLAGS="-Ctarget-cpu=native"
 RUN cargo build --release
 RUN cargo clean -p ferris-elf
