@@ -567,14 +567,14 @@ ahash = "0.8"
 arrayvec = "0.7"
 atoi = "2"
 atoi_radix10 = { git = "https://github.com/gilescope/atoi_radix10" }
-atoi_simd = "0.16"
+atoi_simd = "0.17"
 bitvec = "1"
 bit-set = "0.8"
 bstr = "1"
 btoi = "0.4"
 bytemuck = { version = "1", features = ["must_cast", "nightly_portable_simd", "derive"] }
 car = "0.1"
-core_simd = { git = "https://github.com/rust-lang/portable-simd" }
+# core_simd = { git = "https://github.com/rust-lang/portable-simd" }
 dashmap = "6"
 fancy-regex = "0.14"
 flume = "0.11"
