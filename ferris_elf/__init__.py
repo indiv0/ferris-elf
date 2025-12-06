@@ -46,7 +46,7 @@ async def build_image(msg: discord.Message, solution: bytes) -> bool:
             e += chunk.get("stream") or ""
         if "Compiling[0m ferris-elf" in e:
             e = e[e.index("Compiling[0m ferris-elf") - 18 :]
-            if len(e) < 2000:
+            if len(e) < 1500:
                 await msg.reply(f"Error building benchmark: ```ansi{e}\n```")
                 return False
         from strip_ansi import strip_ansi
@@ -81,7 +81,7 @@ async def run_image(msg: discord.Message, input: str) -> Optional[str]:
                 stdout=True,
                 mem_limit="120g",
                 network_mode="none",
-                cpuset_cpus="0-7,16-23",
+                cpuset_cpus="0-15",
             ),
         )
         out = out.decode("utf-8")
@@ -147,6 +147,7 @@ async def benchmark(
     day: int,
     part: int,
     rerun: bool,
+    approve: bool = False,
 ) -> None:
     build = await build_image(msg, code)
     if not build:
@@ -170,6 +171,10 @@ async def benchmark(
 
         if verify is not None:
             print("Verify", verify, "file", file)
+            if approve:
+                print("Can't approve already verified run")
+                await msg.reply("Can't approve already verified run")
+                return
 
         with open(join(day_path, file), "r") as f:
             input = f.read()
@@ -238,6 +243,14 @@ async def benchmark(
             verified = True
         else:
             print("Cannot verify run", result["answer"])
+
+        if approve:
+            print("Approving for d {day}")
+            cur = db._get_cur()
+            cur.execute(
+                "INSERT INTO solutions VALUES (?, ?, ?, ?, ?)",
+                (file, day, part, result["answer"], result["answer"]),
+            )
 
         results.append(result)
 
@@ -524,7 +537,7 @@ async def handle_dm_commands(client: "MyBot", msg: discord.Message) -> None:
 
 If [_day_] and/or [_part_] is omitted, they are assumed to be today and part 1
 
-Message <@117530756263182344> for any questions""",
+Message <@210141176211177474> for any questions""",
             )
         )
         return
@@ -589,12 +602,12 @@ smallvec = "1"
 t1ha = "0.1"
 #wgpu = "0.18"
 ```
-If you'd like a dependency be added, please send a message to <@117530756263182344>. Check back often as the available dependencies are bound to change over the course of AOC
+If you'd like a dependency be added, please send a message to <@210141176211177474>. Check back often as the available dependencies are bound to change over the course of AOC
 
 **Hardware**
 Benchmarks are run on dedicated hardware in my basement. The hardware \
-consists of a desktop with a Ryzen 5950X processor, for a \
-total of 32 threads. There is 128 gigabytes of DDR4 available to your benchmark.
+consists of a dedicated server with an Intel Xeon W-2145 processor with 16 threads. \
+There is 128 gigabytes of DDR4 available to your benchmark.
 You benchmark is first ran for 5 seconds to warm up the cores, and then \
 benchmarked for another 5. Please do not memoize any values in global state, a \
 call to `run` should always perform all of the work.
@@ -607,6 +620,7 @@ Be kind and do not abuse :)""",
 
     if msg.content.startswith("inputs"):
         authorized = [
+            210141176211177474,  # noxim
             117530756263182344,  # iwearapot
             696196765564534825,  # bendn
             249215681093042186,  # alion02
@@ -663,6 +677,7 @@ Be kind and do not abuse :)""",
 
     if msg.content.startswith("solutions"):
         authorized = [
+            210141176211177474,  # noxim
             117530756263182344,  # iwearapot
             696196765564534825,  # bendn
             249215681093042186,  # alion02
@@ -726,6 +741,7 @@ Be kind and do not abuse :)""",
         if (
             not msg.author.id == 117530756263182344
             and not msg.author.id == 696196765564534825
+            and not msg.author.id == 210141176211177474
         ):
             await msg.reply("(For helptext, Direct Message me `help`)")
             return
@@ -777,7 +793,8 @@ Be kind and do not abuse :)""",
             return
 
         print(f"Approving for d {day}")
-        # cur.execute("INSERT INTO solutions VALUES (?, ?, ?, ?, ?)", (input_id, day, part, answer, answer))
+        cur = client.db._get_cur()
+        cur.execute("INSERT INTO solutions VALUES (?, ?, ?, ?, ?)", (input_id, day, part, answer, answer))
 
         # FIXME(ultrabear): part has been replaced with a quoted string because it is not init as a variable
         # this entire section of code is a deletion candidate too, assess after ruff check pass is completed
@@ -789,6 +806,8 @@ Be kind and do not abuse :)""",
     if len(msg.attachments) == 0:
         await msg.reply("Please provide the code as a file attachment")
         return
+
+    print("foobar")
 
     if not client.queue.empty():
         await msg.reply("Benchmark queued...", mention_author=False)
@@ -818,7 +837,7 @@ class MyBot(discord.Client):
                         and opt_day is not None
                         and opt_part is not None
                     ):
-                        await benchmark(msg, self.db, opt_code, opt_day, opt_part, True)
+                        await benchmark(msg, self.db, opt_code, opt_day, opt_part, True, False)
 
                     await rerun_cmd(self, self.db, msg)
                 else:
@@ -835,7 +854,13 @@ class MyBot(discord.Client):
                     day = int((parts[0:1] or (today(),))[0])
                     part = int((parts[1:2] or (1,))[0])
 
-                    await benchmark(msg, self.db, code, day, part, False)
+                    approve = (parts[2:3] or [""])[0] == "approve" and msg.author.id in [
+                        117530756263182344,  # iwearapot
+                        696196765564534825,  # bendn
+                        210141176211177474,  # noxim
+                    ]
+
+                    await benchmark(msg, self.db, code, day, part, False, approve)
 
                 self.queue.task_done()
             except Exception as err:

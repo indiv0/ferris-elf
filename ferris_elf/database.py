@@ -74,12 +74,22 @@ class Database:
     def get_scores_lb(
         self, day: int, part: int
     ) -> Iterator[tuple[Optional[str], Optional[int]]]:
-        return self._get_cur().execute(
-            """SELECT user, MIN(time) FROM runs
-            WHERE day = ? AND part = ?
-            GROUP BY user ORDER BY time""",
-            (day, part),
-        )
+        
+        if self._has_solution(day, part):
+            return self._get_cur().execute(
+                """SELECT runs.user, MIN(runs.time) FROM runs
+                INNER JOIN solutions ON solutions.day = runs.day AND solutions.part = runs.part AND solutions.answer2 = runs.answer2
+                WHERE runs.day = ? AND runs.part = ?
+                GROUP BY runs.user ORDER BY runs.time""",
+                (day, part),
+            )
+        else:
+            return self._get_cur().execute(
+                """SELECT user, MIN(time) FROM runs
+                WHERE day = ? AND part = ?
+                GROUP BY user ORDER BY time""",
+                (day, part),
+            )
 
     def get_best_lb(
         self, part: int
@@ -88,6 +98,21 @@ class Database:
             "SELECT day, part, user, MIN(time) FROM runs WHERE part=? GROUP BY day, part ORDER BY day, part;",
             (part,),
         )
+    
+    def _has_solution(self, day: int, part: int) -> bool:
+        row = (
+            self._get_cur()
+            .execute(
+                "SELECT answer2 FROM solutions WHERE day = ? AND part = ?",
+                (day, part),
+            )
+            .fetchone()
+        )
+
+        if row:
+            return True
+        else:
+            return False
 
     def get_answer(self, key: str, day: int, part: int) -> Optional[str]:
         row = (
