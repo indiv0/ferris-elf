@@ -18,10 +18,11 @@ car = "0.1"
 # core_simd = { git = "https://github.com/rust-lang/portable-simd" }
 dashmap = "6"
 fancy-regex = "0.14"
+ferris_elf_utils = { git = "https://github.com/indiv0/ferris-elf-utils" }
 flume = "0.11"
+foldhash = "0.1"
 glam = { version = "0.29", features = ["approx", "bytemuck", "rand", "serde", "mint"] }
 itertools = "0.13"
-foldhash = "0.1"
 memchr = "2"
 mimalloc = { version = "0.1", default-features = false }
 ndarray = "0.16"
