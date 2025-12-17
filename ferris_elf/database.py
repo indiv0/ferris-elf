@@ -95,7 +95,12 @@ class Database:
         self, part: int
     ) -> Iterator[tuple[Optional[int], Optional[int], Optional[str], Optional[int]]]:
         return self._get_cur().execute(
-            "SELECT day, part, user, MIN(time) FROM runs WHERE part=? GROUP BY day, part ORDER BY day, part;",
+            """select runs.day, runs.part, user, min(time) from runs
+            inner join solutions on solutions.day = runs.day and solutions.part = runs.part
+            and solutions.answer2 = runs.answer2
+            where runs.part=?
+            group by runs.day, runs.part
+            order by runs.day, runs.part;""",
             (part,),
         )
     
